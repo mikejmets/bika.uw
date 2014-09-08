@@ -1,0 +1,16 @@
+README.txt
+setup.py
+bika/__init__.py
+bika.uw.egg-info/PKG-INFO
+bika.uw.egg-info/SOURCES.txt
+bika.uw.egg-info/dependency_links.txt
+bika.uw.egg-info/entry_points.txt
+bika.uw.egg-info/namespace_packages.txt
+bika.uw.egg-info/not-zip-safe
+bika.uw.egg-info/requires.txt
+bika.uw.egg-info/top_level.txt
+bika/uw/__init__.py
+bika/uw/interfaces.py
+bika/uw/browser/__init__.py
+bika/uw/browser/batch.py
+bika/uw/browser/batchfolder.py

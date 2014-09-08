@@ -1,0 +1,20 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="bika.uw">
+
+  <i18n:registerTranslations directory="locales" />
+
+  <include file="profiles.zcml" />
+
+    <browser:page
+      for="bika.lims.interfaces.IBatchFolder"
+      name="base_view"
+      class="bika.uw.browser.batchfolder.BatchFolderContentsView"
+      permission="cmf.ListFolderContents"
+    />
+
+</configure>
