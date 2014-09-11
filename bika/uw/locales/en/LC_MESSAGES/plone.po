@@ -128,3 +128,29 @@ msgstr "Methods available for analyses in this Work Order"
 msgid "Instruments available for analyses in this Batch"
 msgstr "Instruments available for analyses in this Work Order"
 
+msgid "Client Batch Comment"
+msgstr "Client Work Order Comment"
+
+msgid "approved_transition_title"
+msgstr "Approved"
+
+msgid "received_transition_title"
+msgstr "Received"
+
+msgid "accepted_transition_title"
+msgstr "Accepted"
+
+msgid "released_transition_title"
+msgstr "Released"
+
+msgid "prepared_transition_title"
+msgstr "Prepared"
+
+msgid "tested_transition_title"
+msgstr "Tested"
+
+msgid "passed_qa_transition_title"
+msgstr "Passed QA"
+
+msgid "published_transition_title"
+msgstr "Published"
