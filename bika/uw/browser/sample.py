@@ -4,7 +4,7 @@ from bika.lims import bikaMessageFactory as _
 from bika.lims.browser.widgets import DateTimeWidget
 from bika.lims.browser.widgets import DecimalWidget as bikaDecimalWidget
 from bika.lims.fields import *
-from bika.lims.interfaces import IAnalysisRequest
+from bika.lims.interfaces import ISample
 from Products.Archetypes.public import *
 from zope.component import adapts
 from zope.interface import implements
@@ -15,7 +15,6 @@ ClientSampleComment = ExtTextField(
     default_content_type='text/x-web-intelligent',
     allowable_content_types = ('text/plain', ),
     default_output_type="text/plain",
-    schemata = "AnalysisRequest and Sample Fields",
     acquire=True,
     widget=TextAreaWidget(
         label=_('Client Sample Comment'),
@@ -27,7 +26,6 @@ ClientSampleComment = ExtTextField(
 AmountSampled = ExtStringField(
     'AmountSampled',
     required=False,
-    schemata = "Work Order Instructions",
     acquire=True,
     widget=StringWidget(
         label=_('Amount Sampled'),
@@ -42,7 +40,6 @@ ExceptionalHazards = ExtTextField(
     default_content_type='text/x-web-intelligent',
     allowable_content_types = ('text/plain', ),
     default_output_type="text/plain",
-    schemata = "Hazards",
     acquire=True,
     widget=TextAreaWidget(
         label=_('Exceptional hazards'),
@@ -50,42 +47,14 @@ ExceptionalHazards = ExtTextField(
     )
 )
 
-# This is acquired here from batch
-NonStandardMethodInstructions = ExtTextField(
-    'NonStandardMethodInstructions',
-    required=False,
-    schemata = "Work Order Instructions",
-    acquire=True,
-    widget=TextAreaWidget(
-        label=_('Non-standard Method Instructions'),
-        visible={'view': 'visible',
-                 'edit': 'visible'}
-    ),
-)
-
-# This is acquired here from batch
-ApprovedExceptionsToStandardPractice = ExtTextField(
-    'ApprovedExceptionsToStandardPractice',
-    required=False,
-    schemata = "Work Order Instructions",
-    acquire=True,
-    widget=TextAreaWidget(
-        label=_('Approved Exceptions To Standard Practice'),
-        visible={'view': 'visible',
-                 'edit': 'visible'}
-    ),
-)
-
-class AnalysisRequestSchemaExtender(object):
-    adapts(IAnalysisRequest)
+class SampleSchemaExtender(object):
+    adapts(ISample)
     implements(IOrderableSchemaExtender)
 
     fields = [
         ClientSampleComment,
         AmountSampled,
         ExceptionalHazards,
-        NonStandardMethodInstructions,
-        ApprovedExceptionsToStandardPractice,
     ]
 
     def __init__(self, context):
@@ -93,23 +62,8 @@ class AnalysisRequestSchemaExtender(object):
 
     def getOrder(self, schematas):
         """Return modified order of field schemats.
-
-        >>> portal = layer['portal']
-        >>> portal_url = portal.absolute_url()
-        >>> from plone.app.testing import SITE_OWNER_NAME
-        >>> from plone.app.testing import SITE_OWNER_PASSWORD
-
-        We must test that the SampleTemperature field exists in AR schema display
-        because we use it to position our fields.
-
-        >>> browser = layer['getBrowser'](portal, loggedIn=True, username=SITE_OWNER_NAME, password=SITE_OWNER_PASSWORD)
-        >>> browser.open(portal_url+"/clients/client-1/portal_factory/AnalysisRequest/new_analysisrequest/ar_add")
-        >>> 'Sample Temperature' in browser.contents
-        True
         """
         fields = schematas['default']
-        fields.insert(fields.index('SampleTemperature') + 1, 'ApprovedExceptionsToStandardPractice')
-        fields.insert(fields.index('SampleTemperature') + 1, 'NonStandardMethodInstructions')
         fields.insert(fields.index('SampleTemperature') + 1, 'ExceptionalHazards')
         fields.insert(fields.index('SampleTemperature') + 1, 'ClientSampleComment')
         fields.insert(fields.index('SampleTemperature') + 1, 'AmountSampled')
@@ -120,8 +74,8 @@ class AnalysisRequestSchemaExtender(object):
         return self.fields
 
 
-class AnalysisRequestSchemaModifier(object):
-    adapts(IAnalysisRequest)
+class SampleSchemaModifier(object):
+    adapts(ISample)
     implements(ISchemaModifier)
 
     def __init__(self, context):
