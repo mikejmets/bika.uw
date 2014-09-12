@@ -154,6 +154,25 @@ class BatchSchemaExtender(object):
         self.context = context
 
     def getOrder(self, schematas):
+        """Return modified order of field schemats.
+
+        >>> portal = layer['portal']
+        >>> portal_url = portal.absolute_url()
+        >>> from plone.app.testing import SITE_OWNER_NAME
+        >>> from plone.app.testing import SITE_OWNER_PASSWORD
+
+        We use existing fields to place the new ones in the right order.
+        These must exist.
+
+        >>> browser = layer['getBrowser'](portal, loggedIn=True, username=SITE_OWNER_NAME, password=SITE_OWNER_PASSWORD)
+        >>> browser.open(portal_url+"/batches/portal_factory/Batch/new_batch/edit")
+        >>> 'Client Project Name' in browser.contents
+        True
+        >>> 'Return Sample To Client' in browser.contents
+        True
+        >>> 'Sample Temperature' in browser.contents
+        True
+        """
         fields = schematas['default']
         fields.insert(fields.index('ClientProjectName') + 1,    'ActivitySampled')
 
