@@ -1,3 +1,0 @@
-setuptools
-bika.lims
-archetypes.schemaextender
