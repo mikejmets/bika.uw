@@ -11,6 +11,9 @@ class BatchFolderContentsView(BaseView):
 
     def __init__(self, context, request):
         super(BatchFolderContentsView, self).__init__(context, request)
+        from zope.i18nmessageid import MessageFactory
+        _b = MessageFactory('bika')
+        self.title = _b("Batches")
         self.review_states = [
             {'id': 'active',
              'title': _('Active'),
