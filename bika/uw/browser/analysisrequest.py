@@ -93,26 +93,13 @@ class AnalysisRequestSchemaExtender(object):
 
     def getOrder(self, schematas):
         """Return modified order of field schemats.
-
-        >>> portal = layer['portal']
-        >>> portal_url = portal.absolute_url()
-        >>> from plone.app.testing import SITE_OWNER_NAME
-        >>> from plone.app.testing import SITE_OWNER_PASSWORD
-
-        We must test that the SampleTemperature field exists in AR schema display
-        because we use it to position our fields.
-
-        >>> browser = layer['getBrowser'](portal, loggedIn=True, username=SITE_OWNER_NAME, password=SITE_OWNER_PASSWORD)
-        >>> browser.open(portal_url+"/clients/client-1/portal_factory/AnalysisRequest/new_analysisrequest/ar_add")
-        >>> 'Sample Temperature' in browser.contents
-        True
         """
         fields = schematas['default']
-        fields.insert(fields.index('SampleTemperature') + 1, 'ApprovedExceptionsToStandardPractice')
-        fields.insert(fields.index('SampleTemperature') + 1, 'NonStandardMethodInstructions')
-        fields.insert(fields.index('SampleTemperature') + 1, 'ExceptionalHazards')
-        fields.insert(fields.index('SampleTemperature') + 1, 'ClientSampleComment')
-        fields.insert(fields.index('SampleTemperature') + 1, 'AmountSampled')
+        fields.insert(fields.index('Sample') + 1, 'ApprovedExceptionsToStandardPractice')
+        fields.insert(fields.index('Sample') + 1, 'NonStandardMethodInstructions')
+        fields.insert(fields.index('Sample') + 1, 'ExceptionalHazards')
+        fields.insert(fields.index('Sample') + 1, 'ClientSampleComment')
+        fields.insert(fields.index('Sample') + 1, 'AmountSampled')
 
         return schematas
 
