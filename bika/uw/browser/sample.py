@@ -64,9 +64,9 @@ class SampleSchemaExtender(object):
         """Return modified order of field schemats.
         """
         fields = schematas['default']
-        fields.insert(fields.index('SampleTemperature') + 1, 'ExceptionalHazards')
-        fields.insert(fields.index('SampleTemperature') + 1, 'ClientSampleComment')
-        fields.insert(fields.index('SampleTemperature') + 1, 'AmountSampled')
+        fields.insert(fields.index('SamplePoint') + 1, 'ExceptionalHazards')
+        fields.insert(fields.index('SamplePoint') + 1, 'ClientSampleComment')
+        fields.insert(fields.index('SamplePoint') + 1, 'AmountSampled')
 
         return schematas
 
