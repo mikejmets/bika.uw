@@ -1,0 +1,11 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="bika.uw">
+
+
+<!-- Checkout ../overrides.zcml
+Our secret be benefit their unhappy lack of it --/>
+
+</configure>

@@ -1,8 +1,8 @@
 from bika.lims import bikaMessageFactory as _
-from bika.lims.browser.batchfolder import BatchFolderContentsView as BaseView
+from bika.lims.browser.client import ClientBatchesView as BaseView
 
 
-class BatchFolderContentsView(BaseView):
+class ClientBatchesView(BaseView):
     """Override the default listing of batches.
 
     - Display additional review state filter buttons.
@@ -11,7 +11,7 @@ class BatchFolderContentsView(BaseView):
 
 
     def __init__(self, context, request):
-        super(BatchFolderContentsView, self).__init__(context, request)
+        super(ClientBatchesViewClientBatchesView, self).__init__(context, request)
         from zope.i18nmessageid import MessageFactory
         _b = MessageFactory('bika')
         self.title = _b("Batches")

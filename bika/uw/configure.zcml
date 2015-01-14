@@ -18,15 +18,6 @@
       description="Bika LIMS UW customisations"
       provides="Products.GenericSetup.interfaces.EXTENSION"/>
 
-
-    <adapter factory=".browser.batch.BatchSchemaExtender" />
-    <adapter factory=".browser.batch.BatchSchemaModifier" />
-    <adapter factory=".browser.analysisrequest.AnalysisRequestSchemaExtender" />
-    <adapter factory=".browser.analysisrequest.AnalysisRequestSchemaModifier" />
-    <adapter factory=".browser.analysisservice.AnalysisServiceSchemaExtender" />
-    <adapter factory=".browser.analysisservice.AnalysisServiceSchemaModifier" />
-    <adapter factory=".browser.sample.SampleSchemaExtender" />
-    <adapter factory=".browser.sample.SampleSchemaModifier" />
-
+  <include package="browser"/>
 
 </configure>

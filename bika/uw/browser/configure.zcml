@@ -13,4 +13,6 @@
     <adapter factory=".sample.SampleSchemaExtender" />
     <adapter factory=".sample.SampleSchemaModifier" />
 
+    <include package=".client"/>
+
 </configure>
