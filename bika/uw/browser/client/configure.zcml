@@ -4,8 +4,4 @@
     xmlns:zcml="http://namespaces.zope.org/zcml"
     i18n_domain="bika.uw">
 
-
-<!-- Checkout ../overrides.zcml
-Our secret be benefit their unhappy lack of it --/>
-
 </configure>

@@ -18,6 +18,6 @@
       description="Bika LIMS UW customisations"
       provides="Products.GenericSetup.interfaces.EXTENSION"/>
 
-  <include package="browser"/>
+  <include package=".browser"/>
 
 </configure>

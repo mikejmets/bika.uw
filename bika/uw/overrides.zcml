@@ -15,7 +15,7 @@
     <browser:page
       for="bika.lims.interfaces.IClient"
       name="batches"
-      class="bika.uw.browser.client.ClientBatchesView"
+      class="bika.uw.browser.client.batchfolder.ClientBatchesView"
       permission="zope2.View"
       layer="bika.lims.interfaces.IBikaLIMS"
     />
