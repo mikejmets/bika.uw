@@ -12,6 +12,12 @@ Title:,Requested,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
 Transitions,"approved",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
+View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
+BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Close Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Reopen Batch,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+BIKA: Add Analysis Request,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 ,,,,,,,,,,,,,,,
 [State],,,,,,,,,,,,,,,
 Id:,approved,,,,,,,,,,,,,,
@@ -19,6 +25,12 @@ Title:,Approved,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
 Transitions,"received",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
+View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
+BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Close Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Reopen Batch,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+BIKA: Add Analysis Request,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 ,,,,,,,,,,,,,,,
 [State],,,,,,,,,,,,,,,
 Id:,received,,,,,,,,,,,,,,
@@ -26,6 +38,12 @@ Title:,Received,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
 Transitions,"accepted",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
+View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
+BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Close Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Reopen Batch,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+BIKA: Add Analysis Request,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 ,,,,,,,,,,,,,,,
 [State],,,,,,,,,,,,,,,
 Id:,accepted,,,,,,,,,,,,,,
@@ -33,6 +51,12 @@ Title:,Accepted,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
 Transitions,"released",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
+View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
+BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Close Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Reopen Batch,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+BIKA: Add Analysis Request,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 ,,,,,,,,,,,,,,,
 [State],,,,,,,,,,,,,,,
 Id:,released,,,,,,,,,,,,,,
@@ -40,6 +64,12 @@ Title:,Released,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
 Transitions,"prepared",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
+View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
+BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Close Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Reopen Batch,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+BIKA: Add Analysis Request,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 ,,,,,,,,,,,,,,,
 [State],,,,,,,,,,,,,,,
 Id:,prepared,,,,,,,,,,,,,,
@@ -47,6 +77,12 @@ Title:,Prepared,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
 Transitions,"tested",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
+View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
+BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Close Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Reopen Batch,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+BIKA: Add Analysis Request,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 ,,,,,,,,,,,,,,,
 [State],,,,,,,,,,,,,,,
 Id:,tested,,,,,,,,,,,,,,
@@ -54,6 +90,12 @@ Title:,Tested,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
 Transitions,"passed_qa",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
+View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
+BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Close Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Reopen Batch,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+BIKA: Add Analysis Request,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 ,,,,,,,,,,,,,,,
 [State],,,,,,,,,,,,,,,
 Id:,passed_qa,,,,,,,,,,,,,,
@@ -61,6 +103,12 @@ Title:,Passed QA,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
 Transitions,"publish",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
+View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
+BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Close Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Reopen Batch,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+BIKA: Add Analysis Request,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 ,,,,,,,,,,,,,,,
 [State],,,,,,,,,,,,,,,
 Id:,published,,,,,,,,,,,,,,
@@ -68,6 +116,12 @@ Title:,Published,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
 Transitions,"",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
+View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
+BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Close Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Reopen Batch,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+BIKA: Add Analysis Request,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 ,,,,,,,,,,,,,,,
 [Transition],,,,,,,,,,,,,,,
 Id:,approved,,,,,,,,,,,,,,
