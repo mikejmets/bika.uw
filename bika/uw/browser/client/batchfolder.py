@@ -52,7 +52,7 @@ class ClientBatchesView(BaseView):
                                'sort_on': 'created',
                                'sort_order': 'reverse'}},
             {'id': 'received',
-             'title': _('Recieved'),
+             'title': _('Received'),
              'columns': ['Title',
                          'BatchID',
                          'BatchDate',
