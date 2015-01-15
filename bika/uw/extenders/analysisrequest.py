@@ -115,4 +115,12 @@ class AnalysisRequestSchemaModifier(object):
         self.context = context
 
     def fiddle(self, schema):
+        toremove = ['AdHoc',
+                    'Composite',
+                    'InvoiceExclude',
+                    'Priority']
+        for field in toremove:
+            schema[field].required = False
+            schema[field].widget.visible = False
+
         return schema
