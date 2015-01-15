@@ -19,5 +19,6 @@
       provides="Products.GenericSetup.interfaces.EXTENSION"/>
 
   <include package=".browser"/>
+  <include package=".extenders"/>
 
 </configure>
