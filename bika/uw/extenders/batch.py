@@ -147,7 +147,8 @@ class BatchSchemaExtender(object):
         MSDSorSDS,
         ClientSampleComment,
         ExceptionalHazards,
-        NonStandardMethodInstructions
+        NonStandardMethodInstructions,
+        ApprovedExceptionsToStandardPractice
     ]
 
     def __init__(self, context):
@@ -191,15 +192,14 @@ class BatchSchemaExtender(object):
 
         fields = schematas['Work Order Instructions']
         fields.insert(fields.index('NonStandardMethodInstructions')+1, 'NonStandardMethodInstructions')
+        fields.insert(fields.index('NonStandardMethodInstructions')+1, 'ApprovedExceptionsToStandardPractice')
         fields.insert(fields.index('NonStandardMethodInstructions')+1, 'Profile')
-        fields.insert(fields.index('NonStandardMethodInstructions')+1, 'Template')
         fields.insert(fields.index('NonStandardMethodInstructions')+1, 'Instruments')
         fields.insert(fields.index('NonStandardMethodInstructions')+1, 'Methods')
         fields.insert(fields.index('NonStandardMethodInstructions')+1, 'Specification')
 
         fields = schematas['Hazards']
         fields.insert(fields.index('ExceptionalHazards'), 'BioHazardous')
-
         return schematas
 
     def getFields(self):
