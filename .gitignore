@@ -14,7 +14,9 @@
 .DS_Store*
 .idea/*
 .installed.cfg
+.mr.developer*
 .settings
+bika.lims
 bika.uw.egg-info
 bin
 build
