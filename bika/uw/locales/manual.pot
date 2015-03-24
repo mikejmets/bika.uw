@@ -1,3 +1,6 @@
+msgid ""
+msgstr ""
+
 msgid "date_format_long"
 msgstr "${Y}-${m}-${d} ${I}:${M} ${p}"
 

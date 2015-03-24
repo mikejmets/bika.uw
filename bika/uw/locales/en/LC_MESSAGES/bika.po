@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
-"POT-Creation-Date: 2014-09-03 11:27:21\n"
+"POT-Creation-Date: YEAR-MO-DA HO:MI +ZONE\n"
 "PO-Revision-Date: 2014-09-03 11:27:21\n"
 "Last-Translator: Campbell Mc Kellar-Basset <campbell@bikalabs.com>\n"
 "Language-Team: English <support@bikalabs.com>\n"
@@ -14,11 +14,17 @@ msgstr ""
 "Preferred-Encodings: utf-8 latin1\n"
 "Domain: bika\n"
 
+msgid "Accepted"
+msgstr "Accepted"
+
 msgid "Analyses per sample type"
 msgstr "Analyses per sample medium"
 
 msgid "Analysis results for per sample point and analysis service"
 msgstr "Analysis results for per sample site and analysis service"
+
+msgid "Approved"
+msgstr "Approved"
 
 msgid "Batch"
 msgstr "Work Order"
@@ -31,6 +37,9 @@ msgstr "Work Order Categories"
 
 msgid "Batches"
 msgstr "Work Orders"
+
+msgid "Client Batch Comment"
+msgstr "Client Work Order Comment"
 
 msgid "Client Batch ID"
 msgstr "Client Work Order ID"
@@ -56,17 +65,41 @@ msgstr "If there are previous results for a service in the same Work Order, they
 msgid "Include Previous Results From Batch"
 msgstr "Include Previous Results From Work Order"
 
+msgid "Instruments available for analyses in this Batch"
+msgstr "Instruments available for analyses in this Work Order"
+
+msgid "Methods available for analyses in this Batch"
+msgstr "Methods available for analyses in this Work Order"
+
 msgid "Number of analyses requested per sample type"
 msgstr "Number of analyses requested per sample medium"
 
 msgid "Once preserved, the sample must be disposed of within this time period.  If not specified, the sample type retention period will be used."
 msgstr "Once preserved, the sample must be disposed of within this time period.  If not specified, the sample medium retention period will be used."
 
+msgid "Passed QA"
+msgstr "Passed QA"
+
 msgid "Please specify preservations that differ from the analysis service's default preservation per sample type here."
 msgstr "Please specify preservations that differ from the analysis service's default preservation per sample medium here."
 
+msgid "Prepared"
+msgstr "Prepared"
+
+msgid "Published"
+msgstr "Published"
+
+msgid "Received"
+msgstr "Received"
+
 msgid "ReferenceDefinition represents a Reference Definition or sample type used for quality control testing"
 msgstr "ReferenceDefinition represents a Reference Definition or sample medium used for quality control testing"
+
+msgid "Released"
+msgstr "Released"
+
+msgid "Requested"
+msgstr "Requested"
 
 msgid "Results per sample point"
 msgstr "Results per sample site"
@@ -104,6 +137,9 @@ msgstr "Select a default preservation for this analysis service. If the preserva
 msgid "Select the default container to be used for this analysis service. If the container to be used depends on the sample type and preservation combination, specify the container in the sample type table below"
 msgstr "Select the default container to be used for this analysis service. If the container to be used depends on the sample medium and preservation combination, specify the container in the sample medium table below"
 
+msgid "Tested"
+msgstr "Tested"
+
 msgid "The list of sample points from which this sample type can be collected.  If no sample points are selected, then all sample points are available."
 msgstr "The list of sample sites from which this sample medium can be collected.  If no sample sites are selected, then all sample sites are available."
 
@@ -122,35 +158,39 @@ msgstr "The results of field analyses are captured during sampling at the sample
 msgid "To include this spec as the default for a sample type, set the title here to the name of the sample type."
 msgstr "To include this spec as the default for a sample medium, set the title here to the name of the sample medium."
 
-msgid "Methods available for analyses in this Batch"
-msgstr "Methods available for analyses in this Work Order"
-
-msgid "Instruments available for analyses in this Batch"
-msgstr "Instruments available for analyses in this Work Order"
-
-msgid "Client Batch Comment"
-msgstr "Client Work Order Comment"
+msgid "accepted_transition_title"
+msgstr "Accepted"
 
 msgid "approved_transition_title"
 msgstr "Approved"
 
-msgid "received_transition_title"
-msgstr "Received"
+msgid "date_format_long"
+msgstr "${Y}-${m}-${d} ${I}:${M} ${p}"
 
-msgid "accepted_transition_title"
-msgstr "Accepted"
+msgid "date_format_short"
+msgstr "${Y}-${m}-${d}"
 
-msgid "released_transition_title"
-msgstr "Released"
-
-msgid "prepared_transition_title"
-msgstr "Prepared"
-
-msgid "tested_transition_title"
-msgstr "Tested"
+msgid "date_format_short_datepicker"
+msgstr "yy-mm-dd"
 
 msgid "passed_qa_transition_title"
 msgstr "Passed QA"
 
+msgid "prepared_transition_title"
+msgstr "Prepared"
+
 msgid "published_transition_title"
 msgstr "Published"
+
+msgid "received_transition_title"
+msgstr "Received"
+
+msgid "released_transition_title"
+msgstr "Released"
+
+msgid "tested_transition_title"
+msgstr "Tested"
+
+msgid "time_format"
+msgstr "${I}:${M} ${p}"
+
