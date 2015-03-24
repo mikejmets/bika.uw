@@ -15,7 +15,7 @@
 .idea/*
 .installed.cfg
 .settings
-bika.uw.egg-info/*
+bika.uw.egg-info
 bin
 build
 develop-eggs
@@ -31,4 +31,3 @@ report.html
 selenium-screenshot*
 Thumbs.db
 var
-/bika.uw.egg-info/
