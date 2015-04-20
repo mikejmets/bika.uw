@@ -35,6 +35,9 @@ msgstr "Work Order ID"
 msgid "Batch Labels"
 msgstr "Work Order Categories"
 
+msgid "Batch labels"
+msgstr "Work Order Categories"
+
 msgid "Batches"
 msgstr "Work Orders"
 

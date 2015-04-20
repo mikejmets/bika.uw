@@ -1,18 +1,18 @@
+from bika.lims import bikaMessageFactory as _
+
 from archetypes.schemaextender.interfaces import IOrderableSchemaExtender
 from archetypes.schemaextender.interfaces import ISchemaModifier
-from bika.lims import bikaMessageFactory as _
 from bika.lims.browser.widgets import DateTimeWidget
-from bika.lims.browser.widgets import DecimalWidget as bikaDecimalWidget
 from bika.lims.fields import *
 from bika.lims.interfaces import IBatch
 from Products.Archetypes.public import *
 from zope.component import adapts
-from zope.interface import implements
+
 
 ActivitySampled = ExtStringField(
     'ActivitySampled',
     required=False,
-    schemata = "AnalysisRequest and Sample Fields",
+    schemata="AnalysisRequest and Sample Fields",
     widget=StringWidget(
         label=_('Activity Sampled'),
         visible={'view': 'visible',
@@ -23,7 +23,7 @@ ActivitySampled = ExtStringField(
 QCBlanksProvided = ExtBooleanField(
     'QCBlanksProvided',
     required=False,
-    schemata = "AnalysisRequest and Sample Fields",
+    schemata="AnalysisRequest and Sample Fields",
     widget=BooleanWidget(
         label=_('QC Blanks Provided'),
         visible={'view': 'visible',
@@ -34,7 +34,7 @@ QCBlanksProvided = ExtBooleanField(
 MediaLotNr = ExtStringField(
     'MediaLotNr',
     required=False,
-    schemata = "AnalysisRequest and Sample Fields",
+    schemata="AnalysisRequest and Sample Fields",
     widget=StringWidget(
         label=_('Media Lot Number'),
         visible={'view': 'visible',
@@ -45,7 +45,7 @@ MediaLotNr = ExtStringField(
 SampleAndQCLotMatch = ExtBooleanField(
     'SampleAndQCLotMatch',
     required=False,
-    schemata = "AnalysisRequest and Sample Fields",
+    schemata="AnalysisRequest and Sample Fields",
     widget=BooleanWidget(
         label=_('Lot for samples matches QC Blanks'),
         visible={'view': 'visible',
@@ -56,7 +56,7 @@ SampleAndQCLotMatch = ExtBooleanField(
 MSDSorSDS = ExtBooleanField(
     'MSDSorSDS',
     required=False,
-    schemata = "AnalysisRequest and Sample Fields",
+    schemata="AnalysisRequest and Sample Fields",
     widget=BooleanWidget(
         label=_('MSDS or SDS provided'),
         visible={'view': 'visible',
@@ -67,31 +67,33 @@ MSDSorSDS = ExtBooleanField(
 ClientSampleComment = ExtTextField(
     'ClientSampleComment',
     default_content_type='text/x-web-intelligent',
-    allowable_content_types = ('text/plain', ),
+    allowable_content_types=('text/plain', ),
     default_output_type="text/plain",
-    schemata = "AnalysisRequest and Sample Fields",
+    schemata="AnalysisRequest and Sample Fields",
     widget=TextAreaWidget(
         label=_('Client Sample Comment'),
-        description=_("These comments will be applied as defaults in Client Remarks field for new Samples."),
+        description=_(
+            "These comments will be applied as defaults in Client Remarks field for new Samples."),
     )
 )
 
 ExceptionalHazards = ExtTextField(
     'ExceptionalHazards',
     default_content_type='text/x-web-intelligent',
-    allowable_content_types = ('text/plain', ),
+    allowable_content_types=('text/plain', ),
     default_output_type="text/plain",
-    schemata = "Hazards",
+    schemata="Hazards",
     widget=TextAreaWidget(
         label=_('Exceptional hazards'),
-        description=_("The value selected here will be set as the default for new Samples."),
+        description=_(
+            "The value selected here will be set as the default for new Samples."),
     )
 )
 
 AmountSampled = ExtStringField(
     'AmountSampled',
     required=False,
-    schemata = "Work Order Instructions",
+    schemata="Work Order Instructions",
     widget=StringWidget(
         label=_('Amount Sampled'),
         visible={'view': 'visible',
@@ -101,7 +103,7 @@ AmountSampled = ExtStringField(
 AmountSampledMetric = ExtStringField(
     'AmountSampledMetric',
     required=False,
-    schemata = "Work Order Instructions",
+    schemata="Work Order Instructions",
     widget=StringWidget(
         label=_('Amount Sampled Metric'),
         visible={'view': 'visible',
@@ -112,7 +114,7 @@ AmountSampledMetric = ExtStringField(
 ApprovedExceptionsToStandardPractice = ExtTextField(
     'ApprovedExceptionsToStandardPractice',
     required=False,
-    schemata = "Work Order Instructions",
+    schemata="Work Order Instructions",
     widget=TextAreaWidget(
         label=_('Approved Exceptions To Standard Practice'),
         visible={'view': 'visible',
@@ -123,7 +125,7 @@ ApprovedExceptionsToStandardPractice = ExtTextField(
 NonStandardMethodInstructions = ExtTextField(
     'NonStandardMethodInstructions',
     required=False,
-    schemata = "Work Order Instructions",
+    schemata="Work Order Instructions",
     widget=TextAreaWidget(
         label=_('Non-standard Method Instructions'),
         visible={'view': 'visible',
@@ -131,14 +133,133 @@ NonStandardMethodInstructions = ExtTextField(
     ),
 )
 
+DateApproved = ExtStringField(
+    'DateApproved',
+    schemata="Dates",
+    mode="r",
+    widget=StringWidget(
+        label=_('Date Approved'),
+        visible={'view': 'visible',
+                 'edit': 'visible'}
+    )
+)
+
+DateReceived = ExtStringField(
+    'DateReceived',
+    schemata="Dates",
+    mode="r",
+    widget=StringWidget(
+        label=_('Date Received')
+    )
+)
+
+DateAccepted = ExtStringField(
+    'DateAccepted',
+    schemata="Dates",
+    mode="r",
+    widget=StringWidget(
+        label=_('Date Accepted')
+    )
+)
+
+DateReleased = ExtStringField(
+    'DateReleased',
+    schemata="Dates",
+    mode="r",
+    widget=StringWidget(
+        label=_('Date Released')
+    )
+)
+
+DatePrepared = ExtStringField(
+    'DatePrepared',
+    schemata="Dates",
+    mode="r",
+    widget=StringWidget(
+        label=_('Date Prepared')
+    )
+)
+
+DateTested = ExtStringField(
+    'DateTested',
+    schemata="Dates",
+    mode="r",
+    widget=StringWidget(
+        label=_('Date Tested')
+    )
+)
+
+DateQADue = ExtDateTimeField(
+    'DateQADue',
+    schemata="Dates",
+    widget=DateTimeWidget(label=_('Date QA Due'))
+)
+
+DatePassedQA = ExtStringField(
+    'DatePassedQA',
+    schemata="Dates",
+    mode="r",
+    widget=StringWidget(
+        label=_('Date Passed QA')
+    )
+)
+
+DatePublicationDue = ExtDateTimeField(
+    'DatePublicationDue',
+    schemata="Dates",
+    widget=DateTimeWidget(label=_('Date Publications Due'))
+)
+
+DatePublished = ExtStringField(
+    'DatePublished',
+    schemata="Dates",
+    mode="r",
+    widget=StringWidget(
+        label=_('Date Published')
+    )
+)
+
+DateOfExpiry = ExtStringField(
+    'DateOfExpiry',
+    schemata="Dates",
+    mode="r",
+    widget=StringWidget(
+        label=_('Date Of Expiry')
+    )
+)
+
+DateDisposed = ExtStringField(
+    'DateDisposed',
+    schemata="Dates",
+    mode="r",
+    widget=StringWidget(
+        label=_('Date Of Disposal (or return to client)')
+    )
+)
+
+DateCancelled = ExtStringField(
+    'DateCancelled',
+    schemata="Dates",
+    mode="r",
+    widget=StringWidget(label=_('Date Cancelled'))
+)
+
+DateOfRetractions = ExtLinesField(
+    'DateOfRetractions',
+    schemata="Dates",
+    mode="r",
+    widget=TextAreaWidget(
+        label=_('Date Of AR Retractions')
+    )
+)
+
+
 class BatchSchemaExtender(object):
     adapts(IBatch)
     implements(IOrderableSchemaExtender)
 
     fields = [
-        # Default tab
         ActivitySampled,
-        # ar and samples tab
         AmountSampled,
         AmountSampledMetric,
         MediaLotNr,
@@ -148,63 +269,117 @@ class BatchSchemaExtender(object):
         ClientSampleComment,
         ExceptionalHazards,
         NonStandardMethodInstructions,
-        ApprovedExceptionsToStandardPractice
+        ApprovedExceptionsToStandardPractice,
+        DateApproved,
+        DateReceived,
+        DateAccepted,
+        DateReleased,
+        DatePrepared,
+        DateTested,
+        DateQADue,
+        DatePassedQA,
+        DatePublicationDue,
+        DatePublished,
+        DateOfExpiry,
+        DateDisposed,
+        DateCancelled,
+        DateOfRetractions,
     ]
 
     def __init__(self, context):
         self.context = context
 
     def getOrder(self, schematas):
-        """Return modified order of field schemats.
-
-        >>> portal = layer['portal']
-        >>> portal_url = portal.absolute_url()
-        >>> from plone.app.testing import SITE_OWNER_NAME
-        >>> from plone.app.testing import SITE_OWNER_PASSWORD
-
-        We use existing fields to place the new ones in the right order.
-        These must exist.
-
-        >>> browser = layer['getBrowser'](portal, loggedIn=True, username=SITE_OWNER_NAME, password=SITE_OWNER_PASSWORD)
-        >>> browser.open(portal_url+"/batches/portal_factory/Batch/new_batch/edit")
-        >>> 'Client Project Name' in browser.contents
-        True
-        >>> 'Return Sample To Client' in browser.contents
-        True
-        >>> 'Sample Temperature' in browser.contents
-        True
+        """Return modified order of field schematas.  I've stubbed this to
+        include all the new fields, but I haven't bothered to set the order
+        here; it gets confusing, and since some schemas are changed and
+        additional ordering done in the BatchShemaModifier below, I'll do
+        everything there.
         """
-        fields = schematas['default']
-        fields.insert(fields.index('ClientProjectName') + 1,    'ActivitySampled')
 
-        fields = schematas['AnalysisRequest and Sample Fields']
-        fields.insert(fields.index('ReturnSampleToClient') + 1, 'QCBlanksProvided')
-        fields.insert(fields.index('SamplePoint') + 1, 'MSDSorSDS')
-        fields.insert(fields.index('SamplePoint') + 1, 'SampleAndQCLotMatch')
-        fields.insert(fields.index('SamplePoint') + 1, 'MediaLotNr')
-        fields.insert(fields.index('SampleTemperature') + 1, 'ClientSampleComment')
+        schematas["Create and Approve"] = [
+            "title",
+            "description",
+            "BatchDate",
+            "BatchLabels",
+            "ClientProjectName",  # hidden in non-client batches by default
+            "ClientBatchID",  # hidden in non-client batches by default
+            "Contact",  # hidden in non-client batches by default
+            "CCContact",  # hidden in non-client batches by default
+            "CCEmails",  # hidden in non-client batches by default
+            "InvoiceContact",  # hidden in non-client batches by default
+            "ClientBatchComment",  # hidden in non-client batches by default
+            "ClientOrderNumber",  # hidden in non-client batches by default
+            "ClientReference",  # hidden in non-client batches by default
+            "SamplingDate",
+            "SampleType",
+            "SampleMatrix",
+            "PreparationWorkflow",
+            "ReturnSampleToClient",
+            "Remarks",
+            "InheritedObjects",
+            "InheritedObjectsUI",
+        ]
+        schematas["Receive and Accept"] = [
+            "SamplePoint",
+            "StorageLocation",
+            ## "ReturnSampleToClient",
+            "SampleTemperature",
+            "SampleCondition",
+            "SamplingDeviation",
+            ## "SampleType",
+            ## "SampleMatrix",
+            "DefaultContainerType",
+            ## "SamplingDate",
+            "DateSampled",
+            "Sampler",
+            "ActivitySampled",
+            "MediaLotNr",
+            "QCBlanksProvided",
+            "MSDSorSDS",
+            "SampleAndQCLotMatch",
+            "ClientSampleComment",
+            "BioHazardous",
+            "ExceptionalHazards",
+            "AmountSampled",
+            "AmountSampledMetric",
+        ]
+        schematas["Assign"] = [
+            "Analysts",
+            "LeadAnalyst",
+            ## "ClientBatchComment",
+            "Specification",
+            "Methods",
+            "Instruments",
+            "Profile",
+            "NonStandardMethodInstructions",
+            "ApprovedExceptionsToStandardPractice",
+        ]
+        schematas["Dates"] = [
+            ## "BatchDate",
+            "DateApproved",
+            "SamplingDate",
+            ## "DateSampled",
+            "DateReceived",
+            "DateAccepted",
+            "DateReleased",
+            "DatePrepared",
+            "DateTested",
+            "DateQADue",
+            "DatePassedQA",
+            "DatePublicationDue",
+            "DatePublished",
+            "DateOfExpiry",
+            "DateDisposed",
+            "DateCancelled",
+            "DateOfRetractions",
+        ]
 
-        # Move some fields into Work Order Instructions schemata
-        fields = schematas['default']
-        for x in ['Specification', 'ARTemplate', 'Profile', 'BioHazardous']:
-            if x in fields:
-                fields.remove(x)
-
-        fields = schematas['Work Order Instructions']
-        fields.insert(fields.index('NonStandardMethodInstructions')+1, 'NonStandardMethodInstructions')
-        fields.insert(fields.index('NonStandardMethodInstructions')+1, 'ApprovedExceptionsToStandardPractice')
-        fields.insert(fields.index('NonStandardMethodInstructions')+1, 'Profile')
-        fields.insert(fields.index('NonStandardMethodInstructions')+1, 'Instruments')
-        fields.insert(fields.index('NonStandardMethodInstructions')+1, 'Methods')
-        fields.insert(fields.index('NonStandardMethodInstructions')+1, 'Specification')
-
-        fields = schematas['Hazards']
-        fields.insert(fields.index('ExceptionalHazards'), 'BioHazardous')
         return schematas
+
 
     def getFields(self):
         return self.fields
-
 
 
 class BatchSchemaModifier(object):
@@ -215,4 +390,27 @@ class BatchSchemaModifier(object):
         self.context = context
 
     def fiddle(self, schema):
+        """
+        """
+
+        # Hide fields UW doesn't care to see
+        for fn in ["ARTemplate", "Priority"]:
+            if fn in schema:
+                schema[fn].widget.visible = {"view": False, "edit": False}
+
+        # Force-show fields that UW does want to see, which might
+        # otherwise have been hidden:['ClientBatchID',
+        for fn in ["ClientBatchID",
+                   "ClientProjectName",
+                   "ClientBatchComment",
+                   "Contact",
+                   "CCContact",
+                   "CCEmails",
+                   "InvoiceContact",
+                   "ClientOrderNumber",
+                   "ClientReference",
+                   "Priority"]:
+            if fn in schema:
+                schema[fn].widget.visible = {"view": True, "edit": True}
+
         return schema
