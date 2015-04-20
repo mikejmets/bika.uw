@@ -6,4 +6,10 @@
 
     <include package=".client"/>
 
+    <browser:resourceDirectory
+      name="bika.uw.js"
+      directory="js"
+      layer="bika.lims.interfaces.IBikaLIMS"
+      />
+
 </configure>

@@ -16,11 +16,13 @@
       The Schema and SchemaExtender code is responsible for configuring the
       first instance of each field.  the 'duplicate_fields' definition below
       defines details of additional instances of certain fields to be inserted.
+
+      The values of the original and duplicated widgets will be kept in sync.
+
       Take care that the field specified in 'after' or 'before', exists in the
       schema!  Some IATWidgetVisiblity condition or schema extender may remove
       fields that are correctly declared.  If you use a field here for
       positioning another field, add it to the list of force-shown fields
-      in bika.uw/extenders/batch/SchemaModifier
 
       2) XXX Display some fields in 'view' mode fields during 'edit'.
       These fields should remain hidden during display of 'add' form.
@@ -68,26 +70,18 @@
 
                     <tal:befores tal:define="befores python:[x for x in dups if x.get('before', '') == field.getName()];"
                                  tal:condition="python:befores">
-                        <tal:before repeat="before befores">
-                            <tal:beforeF tal:define="F python:context.Schema()[before['fieldname']];
-                                                    dummy python:F.__name__ = before['fieldname'] + '_dup'">
-                            <metal:fieldMacro
-                                    use-macro="python:context.widget(before['fieldname'], mode='edit', field=F)"/>
-                            </tal:beforeF>
-                        </tal:before>
+                        <span tal:repeat="before befores" class="uw-dup">
+                            <metal:fieldMacro use-macro="python:context.widget(before['fieldname'], mode='edit')" />
+                        </span>
                     </tal:befores>
 
                     <metal:fieldMacro use-macro="python:context.widget(field.getName(), mode='edit')" />
 
                     <tal:afters tal:define="afters python:[x for x in dups if x.get('after', '') == field.getName()];"
                                 tal:condition="python:afters">
-                        <tal:after repeat="after afters">
-                            <tal:afterF tal:define="F python:context.Schema()[after['fieldname']];
-                                                    dummy python:F.__name__ = after['fieldname'] + '_dup'">
-                            <metal:fieldMacro
-                                    use-macro="python:context.widget(after['fieldname'], mode='edit', field=F)"/>
-                            </tal:afterF>
-                        </tal:after>
+                        <span tal:repeat="after afters" class="uw-dup">
+                            <metal:fieldMacro use-macro="python:context.widget(after['fieldname'], mode='edit')" />
+                        </span>
                     </tal:afters>
 
                 </tal:fields>
@@ -95,6 +89,7 @@
               </fieldset>
             </tal:fieldsets>
           </tal:tabbed>
+
           <tal:nottabbed tal:condition="not: allow_tabbing | nothing">
               <tal:fields repeat="field python:schematas[fieldset].editableFields(here, visible_only=True)">
                 <metal:fieldMacro use-macro="python:context.widget(field.getName(), mode='edit')" />
@@ -235,9 +230,6 @@
     </form>
 
   </div>
-
-
-
 
   </body>
 </html>
