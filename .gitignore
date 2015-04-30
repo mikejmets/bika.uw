@@ -33,3 +33,4 @@ report.html
 selenium-screenshot*
 Thumbs.db
 var
+/atlassian-ide-plugin.xml
