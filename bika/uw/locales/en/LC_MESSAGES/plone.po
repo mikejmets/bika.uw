@@ -872,18 +872,10 @@ msgid "Worksheets"
 msgstr ""
 
 #
-msgid "accept_transition_title"
-msgstr "Accepted"
-
-#
 # File: ../profiles/default/workflows/bika_inactive_workflow/definition.xml, line: -1
 #. Default: "Activate"
 msgid "activate_transition_title"
 msgstr "Activate"
-
-#
-msgid "approve_transition_title"
-msgstr "Approved"
 
 #
 # File: ../profiles/default/workflows/bika_duplicateanalysis_workflow/definition.xml, line: -1
@@ -900,6 +892,38 @@ msgstr "Assign"
 #. Default: "Add attachment"
 msgid "attach_transition_title"
 msgstr "Add attachment"
+
+#
+msgid "batch_accept_transition_title"
+msgstr "Accepte"
+
+#
+msgid "batch_approve_transition_title"
+msgstr "Approve"
+
+#
+msgid "batch_pass_qa_transition_title"
+msgstr "Pass QA"
+
+#
+msgid "batch_prepare_transition_title"
+msgstr "Prepare"
+
+#
+msgid "batch_publish_transition_title"
+msgstr "Publish"
+
+#
+msgid "batch_receive_transition_title"
+msgstr "Receive"
+
+#
+msgid "batch_release_transition_title"
+msgstr "Release"
+
+#
+msgid "batch_test_transition_title"
+msgstr "Test"
 
 #
 # File: ../profiles/default/workflows/bika_cancellation_workflow/definition.xml, line: -1
@@ -1075,16 +1099,8 @@ msgid "open_transition_title"
 msgstr "Open"
 
 #
-msgid "pass_qa_transition_title"
-msgstr "Passed QA"
-
-#
 msgid "plone_manual_test"
 msgstr "Plone Manual Test"
-
-#
-msgid "prepare_transition_title"
-msgstr "Prepared"
 
 #
 # File: ../profiles/default/workflows/bika_ar_workflow/definition.xml, line: -1
@@ -1106,10 +1122,6 @@ msgstr "Preserve"
 #. Default: "Publish"
 msgid "publish_transition_title"
 msgstr "Publish"
-
-#
-msgid "publishe_transition_title"
-msgstr "Published"
 
 #
 #. Default: "Reassign"
@@ -1137,10 +1149,6 @@ msgstr "Reinstate"
 #. Default: "Reject"
 msgid "reject_transition_title"
 msgstr "Reject"
-
-#
-msgid "release_transition_title"
-msgstr "Released"
 
 #
 # File: ../profiles/default/workflows/bika_ar_workflow/definition.xml, line: -1
@@ -1205,10 +1213,6 @@ msgstr "Submit ARImport"
 #. Default: "Submit for verification"
 msgid "submit_transition_title"
 msgstr "Submit for verification"
-
-#
-msgid "test_transition_title"
-msgstr "Tested"
 
 #
 msgid "time_format"

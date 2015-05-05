@@ -157,26 +157,26 @@ msgstr "Instruments available for analyses in this Work Order"
 msgid "Client Batch Comment"
 msgstr "Client Work Order Comment"
 
-msgid "approve_transition_title"
-msgstr "Approved"
+msgid "batch_approve_transition_title"
+msgstr "Approve"
 
-msgid "receive_transition_title"
-msgstr "Received"
+msgid "batch_receive_transition_title"
+msgstr "Receive"
 
-msgid "accept_transition_title"
-msgstr "Accepted"
+msgid "batch_accept_transition_title"
+msgstr "Accepte"
 
-msgid "release_transition_title"
-msgstr "Released"
+msgid "batch_release_transition_title"
+msgstr "Release"
 
-msgid "prepare_transition_title"
-msgstr "Prepared"
+msgid "batch_prepare_transition_title"
+msgstr "Prepare"
 
-msgid "test_transition_title"
-msgstr "Tested"
+msgid "batch_test_transition_title"
+msgstr "Test"
 
-msgid "pass_qa_transition_title"
-msgstr "Passed QA"
+msgid "batch_pass_qa_transition_title"
+msgstr "Pass QA"
 
-msgid "publishe_transition_title"
-msgstr "Published"
+msgid "batch_publish_transition_title"
+msgstr "Publish"

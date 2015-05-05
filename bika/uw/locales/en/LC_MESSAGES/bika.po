@@ -6101,10 +6101,6 @@ msgid "You must select an instrument"
 msgstr ""
 
 #
-msgid "accept_transition_title"
-msgstr "Accepted"
-
-#
 # File: bika.lims/bika/lims/browser/reports/administration_usershistory.py, line: 116
 msgid "action"
 msgstr ""
@@ -6125,8 +6121,36 @@ msgid "and others"
 msgstr ""
 
 #
-msgid "approve_transition_title"
-msgstr "Approved"
+msgid "batch_accept_transition_title"
+msgstr "Accepte"
+
+#
+msgid "batch_approve_transition_title"
+msgstr "Approve"
+
+#
+msgid "batch_pass_qa_transition_title"
+msgstr "Pass QA"
+
+#
+msgid "batch_prepare_transition_title"
+msgstr "Prepare"
+
+#
+msgid "batch_publish_transition_title"
+msgstr "Publish"
+
+#
+msgid "batch_receive_transition_title"
+msgstr "Receive"
+
+#
+msgid "batch_release_transition_title"
+msgstr "Release"
+
+#
+msgid "batch_test_transition_title"
+msgstr "Test"
 
 #
 msgid "bika_manual_test"
@@ -6467,26 +6491,6 @@ msgid "new_version_available_title"
 msgstr ""
 
 #
-msgid "pass_qa_transition_title"
-msgstr "Passed QA"
-
-#
-msgid "prepare_transition_title"
-msgstr "Prepared"
-
-#
-msgid "publishe_transition_title"
-msgstr "Published"
-
-#
-msgid "receive_transition_title"
-msgstr "Received"
-
-#
-msgid "release_transition_title"
-msgstr "Released"
-
-#
 # File: bika.lims/bika/lims/content/instrumentscheduledtask.py, line: 100
 msgid "repeating every"
 msgstr ""
@@ -6501,10 +6505,6 @@ msgstr ""
 #. Default: "Content listing"
 msgid "summary_content_listing"
 msgstr ""
-
-#
-msgid "test_transition_title"
-msgstr "Tested"
 
 #
 # File: bika.lims/bika/lims/browser/templates/plone-addsite.pt, line: 72

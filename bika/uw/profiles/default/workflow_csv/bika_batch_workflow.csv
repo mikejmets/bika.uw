@@ -10,7 +10,7 @@ State variable:,review_state,,,,,,,,,,,,,,
 Id:,requested,,,,,,,,,,,,,,
 Title:,Requested,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
-Transitions,"approve",,,,,,,,,,,,,,
+Transitions,"batch_approve",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
 View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
 BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
@@ -23,7 +23,7 @@ Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 Id:,approved,,,,,,,,,,,,,,
 Title:,Approved,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
-Transitions,"receive",,,,,,,,,,,,,,
+Transitions,"batch_receive",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
 View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
 BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
@@ -36,7 +36,7 @@ Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 Id:,received,,,,,,,,,,,,,,
 Title:,Received,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
-Transitions,"accept",,,,,,,,,,,,,,
+Transitions,"batch_accept",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
 View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
 BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
@@ -49,7 +49,7 @@ Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 Id:,accepted,,,,,,,,,,,,,,
 Title:,Accepted,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
-Transitions,"release",,,,,,,,,,,,,,
+Transitions,"batch_release",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
 View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
 BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
@@ -62,7 +62,7 @@ Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 Id:,released,,,,,,,,,,,,,,
 Title:,Released,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
-Transitions,"prepare",,,,,,,,,,,,,,
+Transitions,"batch_prepare",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
 View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
 BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
@@ -75,7 +75,7 @@ Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 Id:,prepared,,,,,,,,,,,,,,
 Title:,Prepared,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
-Transitions,"test",,,,,,,,,,,,,,
+Transitions,"batch_test",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
 View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
 BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
@@ -88,7 +88,7 @@ Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 Id:,tested,,,,,,,,,,,,,,
 Title:,Tested,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
-Transitions,"pass_qa",,,,,,,,,,,,,,
+Transitions,"batch_pass_qa",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
 View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
 BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
@@ -101,7 +101,7 @@ Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 Id:,passed_qa,,,,,,,,,,,,,,
 Title:,Passed QA,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
-Transitions,"publish",,,,,,,,,,,,,,
+Transitions,"batch_publish",,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
 View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
 BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
@@ -114,7 +114,7 @@ Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 Id:,published,,,,,,,,,,,,,,
 Title:,Published,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
-Transitions,"",,,,,,,,,,,,,,
+Transitions,,,,,,,,,,,,,,,
 Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
 View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
 BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
@@ -124,7 +124,7 @@ BIKA: Add Analysis Request,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
 ,,,,,,,,,,,,,,,
 [Transition],,,,,,,,,,,,,,,
-Id:,approve,,,,,,,,,,,,,,
+Id:,batch_approve,,,,,,,,,,,,,,
 Title:,Approve,,,,,,,,,,,,,,
 Description:,"",,,,,,,,,,,,,,
 Target state:,approved,,,,,,,,,,,,,,
@@ -133,7 +133,7 @@ Guard permission:,,,,,,,,,,,,,,,
 Guard expression:,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,
 [Transition],,,,,,,,,,,,,,,
-Id:,receive,,,,,,,,,,,,,,
+Id:,batch_receive,,,,,,,,,,,,,,
 Title:,Receive,,,,,,,,,,,,,,
 Description:,"",,,,,,,,,,,,,,
 Target state:,received,,,,,,,,,,,,,,
@@ -142,7 +142,7 @@ Guard permission:,,,,,,,,,,,,,,,
 Guard expression:,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,
 [Transition],,,,,,,,,,,,,,,
-Id:,accept,,,,,,,,,,,,,,
+Id:,batch_accept,,,,,,,,,,,,,,
 Title:,Accept,,,,,,,,,,,,,,
 Description:,"",,,,,,,,,,,,,,
 Target state:,accepted,,,,,,,,,,,,,,
@@ -151,7 +151,7 @@ Guard permission:,,,,,,,,,,,,,,,
 Guard expression:,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,
 [Transition],,,,,,,,,,,,,,,
-Id:,release,,,,,,,,,,,,,,
+Id:,batch_release,,,,,,,,,,,,,,
 Title:,Release,,,,,,,,,,,,,,
 Description:,"",,,,,,,,,,,,,,
 Target state:,released,,,,,,,,,,,,,,
@@ -160,7 +160,7 @@ Guard permission:,,,,,,,,,,,,,,,
 Guard expression:,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,
 [Transition],,,,,,,,,,,,,,,
-Id:,prepare,,,,,,,,,,,,,,
+Id:,batch_prepare,,,,,,,,,,,,,,
 Title:,Prepare,,,,,,,,,,,,,,
 Description:,"",,,,,,,,,,,,,,
 Target state:,prepared,,,,,,,,,,,,,,
@@ -169,7 +169,7 @@ Guard permission:,,,,,,,,,,,,,,,
 Guard expression:,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,
 [Transition],,,,,,,,,,,,,,,
-Id:,test,,,,,,,,,,,,,,
+Id:,batch_test,,,,,,,,,,,,,,
 Title:,Test,,,,,,,,,,,,,,
 Description:,"",,,,,,,,,,,,,,
 Target state:,tested,,,,,,,,,,,,,,
@@ -178,7 +178,7 @@ Guard permission:,,,,,,,,,,,,,,,
 Guard expression:,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,
 [Transition],,,,,,,,,,,,,,,
-Id:,pass_qa,,,,,,,,,,,,,,
+Id:,batch_pass_qa,,,,,,,,,,,,,,
 Title:,Pass QA,,,,,,,,,,,,,,
 Description:,"",,,,,,,,,,,,,,
 Target state:,passed_qa,,,,,,,,,,,,,,
@@ -187,7 +187,7 @@ Guard permission:,,,,,,,,,,,,,,,
 Guard expression:,,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,
 [Transition],,,,,,,,,,,,,,,
-Id:,publish,,,,,,,,,,,,,,
+Id:,batch_publish,,,,,,,,,,,,,,
 Title:,Publish,,,,,,,,,,,,,,
 Description:,"",,,,,,,,,,,,,,
 Target state:,published,,,,,,,,,,,,,,

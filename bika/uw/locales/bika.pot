@@ -236,11 +236,29 @@ msgstr ""
 "To include this spec as the default for a sample medium, set the title here "
 "to the name of the sample medium."
 #
-msgid "accept_transition_title"
-msgstr "Accepted"
+msgid "batch_accept_transition_title"
+msgstr "Accepte"
 #
-msgid "approve_transition_title"
-msgstr "Approved"
+msgid "batch_approve_transition_title"
+msgstr "Approve"
+#
+msgid "batch_pass_qa_transition_title"
+msgstr "Pass QA"
+#
+msgid "batch_prepare_transition_title"
+msgstr "Prepare"
+#
+msgid "batch_publish_transition_title"
+msgstr "Publish"
+#
+msgid "batch_receive_transition_title"
+msgstr "Receive"
+#
+msgid "batch_release_transition_title"
+msgstr "Release"
+#
+msgid "batch_test_transition_title"
+msgstr "Test"
 #
 msgid "date_format_long"
 msgstr "${Y}-${m}-${d} ${I}:${M} ${p}"
@@ -250,24 +268,6 @@ msgstr "${Y}-${m}-${d}"
 #
 msgid "date_format_short_datepicker"
 msgstr "yy-mm-dd"
-#
-msgid "pass_qa_transition_title"
-msgstr "Passed QA"
-#
-msgid "prepare_transition_title"
-msgstr "Prepared"
-#
-msgid "publishe_transition_title"
-msgstr "Published"
-#
-msgid "receive_transition_title"
-msgstr "Received"
-#
-msgid "release_transition_title"
-msgstr "Released"
-#
-msgid "test_transition_title"
-msgstr "Tested"
 #
 msgid "time_format"
 msgstr "${I}:${M} ${p}"
