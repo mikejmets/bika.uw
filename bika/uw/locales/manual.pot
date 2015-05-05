@@ -164,7 +164,7 @@ msgid "batch_receive_transition_title"
 msgstr "Receive"
 
 msgid "batch_accept_transition_title"
-msgstr "Accepte"
+msgstr "Accept"
 
 msgid "batch_release_transition_title"
 msgstr "Release"

@@ -12,7 +12,7 @@ msgstr ""
 "Language-Code: en\n"
 "Language-Name: English\n"
 "Preferred-Encodings: utf-8 latin1\n"
-"Domain: DOMAIN\n"
+"Domain: bika\n"
 
 #
 # File: bika.lims/bika/lims/browser/templates/login_details.pt, line: 18
