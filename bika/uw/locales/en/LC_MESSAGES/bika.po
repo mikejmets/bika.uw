@@ -6101,7 +6101,7 @@ msgid "You must select an instrument"
 msgstr ""
 
 #
-msgid "accepted_transition_title"
+msgid "accept_transition_title"
 msgstr "Accepted"
 
 #
@@ -6125,7 +6125,7 @@ msgid "and others"
 msgstr ""
 
 #
-msgid "approved_transition_title"
+msgid "approve_transition_title"
 msgstr "Approved"
 
 #
@@ -6467,23 +6467,23 @@ msgid "new_version_available_title"
 msgstr ""
 
 #
-msgid "passed_qa_transition_title"
+msgid "pass_qa_transition_title"
 msgstr "Passed QA"
 
 #
-msgid "prepared_transition_title"
+msgid "prepare_transition_title"
 msgstr "Prepared"
 
 #
-msgid "published_transition_title"
+msgid "publishe_transition_title"
 msgstr "Published"
 
 #
-msgid "received_transition_title"
+msgid "receive_transition_title"
 msgstr "Received"
 
 #
-msgid "released_transition_title"
+msgid "release_transition_title"
 msgstr "Released"
 
 #
@@ -6503,7 +6503,7 @@ msgid "summary_content_listing"
 msgstr ""
 
 #
-msgid "tested_transition_title"
+msgid "test_transition_title"
 msgstr "Tested"
 
 #

@@ -236,10 +236,10 @@ msgstr ""
 "To include this spec as the default for a sample medium, set the title here "
 "to the name of the sample medium."
 #
-msgid "accepted_transition_title"
+msgid "accept_transition_title"
 msgstr "Accepted"
 #
-msgid "approved_transition_title"
+msgid "approve_transition_title"
 msgstr "Approved"
 #
 msgid "date_format_long"
@@ -251,22 +251,22 @@ msgstr "${Y}-${m}-${d}"
 msgid "date_format_short_datepicker"
 msgstr "yy-mm-dd"
 #
-msgid "passed_qa_transition_title"
+msgid "pass_qa_transition_title"
 msgstr "Passed QA"
 #
-msgid "prepared_transition_title"
+msgid "prepare_transition_title"
 msgstr "Prepared"
 #
-msgid "published_transition_title"
+msgid "publishe_transition_title"
 msgstr "Published"
 #
-msgid "received_transition_title"
+msgid "receive_transition_title"
 msgstr "Received"
 #
-msgid "released_transition_title"
+msgid "release_transition_title"
 msgstr "Released"
 #
-msgid "tested_transition_title"
+msgid "test_transition_title"
 msgstr "Tested"
 #
 msgid "time_format"
@@ -433,13 +433,6 @@ msgstr "Publish"
 #. Default: "Reassign"
 msgid "reassign_transition_title"
 msgstr "Reassign"
-#
-# File: ../profiles/default/workflows/bika_analysis_workflow/definition.xml, line: -1
-# File: ../profiles/default/workflows/bika_ar_workflow/definition.xml, line: -1
-# File: ../profiles/default/workflows/bika_sample_workflow/definition.xml, line: -1
-#. Default: "Receive sample"
-msgid "receive_transition_title"
-msgstr "Receive sample"
 #
 # File: ../profiles/default/workflows/bika_cancellation_workflow/definition.xml, line: -1
 #. Default: "Reinstate"

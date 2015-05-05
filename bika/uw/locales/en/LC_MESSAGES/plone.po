@@ -872,7 +872,7 @@ msgid "Worksheets"
 msgstr ""
 
 #
-msgid "accepted_transition_title"
+msgid "accept_transition_title"
 msgstr "Accepted"
 
 #
@@ -882,7 +882,7 @@ msgid "activate_transition_title"
 msgstr "Activate"
 
 #
-msgid "approved_transition_title"
+msgid "approve_transition_title"
 msgstr "Approved"
 
 #
@@ -1075,7 +1075,7 @@ msgid "open_transition_title"
 msgstr "Open"
 
 #
-msgid "passed_qa_transition_title"
+msgid "pass_qa_transition_title"
 msgstr "Passed QA"
 
 #
@@ -1083,7 +1083,7 @@ msgid "plone_manual_test"
 msgstr "Plone Manual Test"
 
 #
-msgid "prepared_transition_title"
+msgid "prepare_transition_title"
 msgstr "Prepared"
 
 #
@@ -1108,7 +1108,7 @@ msgid "publish_transition_title"
 msgstr "Publish"
 
 #
-msgid "published_transition_title"
+msgid "publishe_transition_title"
 msgstr "Published"
 
 #
@@ -1125,10 +1125,6 @@ msgid "receive_transition_title"
 msgstr "Receive sample"
 
 #
-msgid "received_transition_title"
-msgstr "Received"
-
-#
 # File: ../profiles/default/workflows/bika_cancellation_workflow/definition.xml, line: -1
 #. Default: "Reinstate"
 msgid "reinstate_transition_title"
@@ -1143,7 +1139,7 @@ msgid "reject_transition_title"
 msgstr "Reject"
 
 #
-msgid "released_transition_title"
+msgid "release_transition_title"
 msgstr "Released"
 
 #
@@ -1211,7 +1207,7 @@ msgid "submit_transition_title"
 msgstr "Submit for verification"
 
 #
-msgid "tested_transition_title"
+msgid "test_transition_title"
 msgstr "Tested"
 
 #
