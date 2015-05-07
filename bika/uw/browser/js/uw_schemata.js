@@ -11,7 +11,7 @@ jQuery(function ($) {
 			$(e).attr("id", "archetypes-widget-" + fieldname + "_dup")
 
 			//INPUT and TEXTAREA have almost-identical code
-			$.each($(e).find("input"), function (ii, ee) {
+			$.each($(e).find("input").not(":hidden"), function (ii, ee) {
 				// rename individual input elements
 				$(ee).attr("id", $(ee).attr("id").replace(fieldname, fieldname + "_dup"))
 				$(ee).attr("name", $(ee).attr("name").replace(fieldname, fieldname + "_dup"))
