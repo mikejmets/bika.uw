@@ -348,7 +348,6 @@ class BatchSchemaExtender(object):
         schematas["Assign"] = [
             "Analysts",
             "LeadAnalyst",
-            ## "ClientBatchComment",
             "Specification",
             "Methods",
             "Instruments",

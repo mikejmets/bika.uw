@@ -37,7 +37,6 @@
             {'fieldset': 'Receive and Accept', 'fieldname': 'SampleType',           'after':  'SamplingDeviation'},
             {'fieldset': 'Receive and Accept', 'fieldname': 'SampleMatrix',         'after':  'SampleType'},
             {'fieldset': 'Receive and Accept', 'fieldname': 'SamplingDate',         'after':  'DefaultContainerType'},
-            {'fieldset': 'Assign',             'fieldname': 'ClientBatchComment',   'after':  'LeadAnalyst'},
             {'fieldset': 'Dates',              'fieldname': 'BatchDate',            'before': 'SamplingDate'},
             {'fieldset': 'Dates',              'fieldname': 'DateSampled',          'after':  'SamplingDate'},
           ]">
