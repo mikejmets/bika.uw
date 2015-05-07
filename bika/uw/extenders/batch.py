@@ -295,11 +295,7 @@ class BatchSchemaExtender(object):
         self.context = context
 
     def getOrder(self, schematas):
-        """Return modified order of field schematas.  I've stubbed this to
-        include all the new fields, but I haven't bothered to set the order
-        here; it gets confusing, and since some schemas are changed and
-        additional ordering done in the BatchShemaModifier below, I'll do
-        everything there.
+        """Return modified order of field schematas.
         """
 
         schematas["Create and Approve"] = [
