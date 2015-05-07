@@ -8,6 +8,8 @@ from bika.lims.interfaces import IBatch
 from Products.Archetypes.public import *
 from zope.component import adapts
 
+from bika.lims.browser.widgets import ReferenceWidget
+
 
 ActivitySampled = ExtStringField(
     'ActivitySampled',
@@ -302,20 +304,20 @@ class BatchSchemaExtender(object):
             "description",
             "BatchDate",
             "BatchLabels",
-            "ClientProjectName",  # hidden in non-client batches by default
-            "ClientBatchID",  # hidden in non-client batches by default
-            "Contact",  # hidden in non-client batches by default
-            "CCContact",  # hidden in non-client batches by default
-            "CCEmails",  # hidden in non-client batches by default
-            "InvoiceContact",  # hidden in non-client batches by default
-            "ClientBatchComment",  # hidden in non-client batches by default
-            "ClientOrderNumber",  # hidden in non-client batches by default
-            "ClientReference",  # hidden in non-client batches by default
+            "ClientProjectName",        ## These are visible by default,
+            "ClientBatchID",            ## and hidden in non-Client batches
+            "Contact",                  ##
+            "CCContact",                ##
+            "CCEmails",                 ##
+            "InvoiceContact",           ##
+            "ClientBatchComment",       ##
+            "ClientOrderNumber",        ##
+            "ClientReference",          ##
+            "ReturnSampleToClient",     ##
             "SamplingDate",
             "SampleType",
             "SampleMatrix",
             "PreparationWorkflow",
-            "ReturnSampleToClient",
             "Remarks",
             "InheritedObjects",
             "InheritedObjectsUI",
@@ -394,23 +396,24 @@ class BatchSchemaModifier(object):
         """
 
         # Hide fields UW doesn't care to see
-        for fn in ["ARTemplate", "Priority"]:
+        for fn in ["ARTemplate", ]:
             if fn in schema:
-                schema[fn].widget.visible = {"view": False, "edit": False}
+                schema[fn].widget.visible = {"view": "invisible",
+                                             "edit": "invisible"}
 
-        # Force-show fields that UW does want to see, which might
-        # otherwise have been hidden:['ClientBatchID',
-        for fn in ["ClientBatchID",
-                   "ClientProjectName",
-                   "ClientBatchComment",
-                   "Contact",
-                   "CCContact",
-                   "CCEmails",
-                   "InvoiceContact",
-                   "ClientOrderNumber",
-                   "ClientReference",
-                   "Priority"]:
+        # Force-show fields that UW does want to see
+        for fn in ["Priority", ]:
             if fn in schema:
-                schema[fn].widget.visible = {"view": True, "edit": True}
+                schema[fn].widget.visible = {"view": "visible",
+                                             "edit": "visible"}
+
+        # All Client Contact fields must be restricted to show only relevant
+        # Contacts.
+        client = self.context.getClient()
+        if client:
+            ids = [c.getId() for c in client.objectValues('Contact')]
+            for fn in ["Contact", "CCContact", "InvoiceContact"]:
+                if fn in schema:
+                    schema[fn].widget.base_query['id'] = ids
 
         return schema
