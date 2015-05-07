@@ -14,7 +14,8 @@ from bika.lims.browser.widgets import ReferenceWidget
 ActivitySampled = ExtStringField(
     'ActivitySampled',
     required=False,
-    schemata="AnalysisRequest and Sample Fields",
+    # This is not true, but required to legitimise the schemata.
+    schemata="Create and Approve",
     widget=StringWidget(
         label=_('Activity Sampled'),
         visible={'view': 'visible',
@@ -25,7 +26,8 @@ ActivitySampled = ExtStringField(
 QCBlanksProvided = ExtBooleanField(
     'QCBlanksProvided',
     required=False,
-    schemata="AnalysisRequest and Sample Fields",
+    schemata="Assign",
+    # This is not true, but required to legitimise the schemata.
     widget=BooleanWidget(
         label=_('QC Blanks Provided'),
         visible={'view': 'visible',
@@ -36,7 +38,8 @@ QCBlanksProvided = ExtBooleanField(
 MediaLotNr = ExtStringField(
     'MediaLotNr',
     required=False,
-    schemata="AnalysisRequest and Sample Fields",
+    schemata="Receive and Accept",
+    # This is not true, but required to legitimise the schemata.
     widget=StringWidget(
         label=_('Media Lot Number'),
         visible={'view': 'visible',
