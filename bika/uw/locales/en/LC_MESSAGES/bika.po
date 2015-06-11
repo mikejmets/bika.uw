@@ -1007,7 +1007,7 @@ msgstr "Work Order Categories"
 
 #
 # File: bika.lims/bika/lims/content/batch.py, line: 405
-msgid "Batch labels"
+msgid "Batch Labels"
 msgstr ""
 
 #
