@@ -55,6 +55,9 @@ msgstr "Work Order ID"
 msgid "Batch Labels"
 msgstr "Work Order Categories"
 
+msgid "The lab's own label for the batch"
+msgstr "The categories for the Work Order"
+
 msgid "Batches"
 msgstr "Work Orders"
 

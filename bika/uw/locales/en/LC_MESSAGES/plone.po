@@ -821,6 +821,10 @@ msgid "Tested"
 msgstr "Tested"
 
 #
+msgid "The lab's own label for the batch"
+msgstr "The categories for the Work Order"
+
+#
 msgid "The list of sample points from which this sample type can be collected.  If no sample points are selected, then all sample points are available."
 msgstr "The list of sample sites from which this sample medium can be collected.  If no sample sites are selected, then all sample sites are available."
 
