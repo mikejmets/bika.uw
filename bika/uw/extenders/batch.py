@@ -10,6 +10,142 @@ from zope.component import adapts
 
 from bika.lims.browser.widgets import ReferenceWidget
 
+DateApproved = ExtStringField(
+    'DateApproved',
+    schemata="Dates",
+    readonly=True,
+    widget=ComputedWidget(
+        label=_('Date Approved'),
+        description=_('The date the WOrk Order was approved.'),
+        visible={'view': 'visible',
+                 'edit': 'visible'}
+    )
+)
+
+
+DateAccepted = ExtStringField(
+    'DateAccepted',
+    schemata="Dates",
+    readonly=True,
+    widget=ComputedWidget(
+        label=_('Date Accepted'),
+        description=_('The date the Work Order was accepted.')
+    )
+)
+
+DatePrepared = ExtStringField(
+    'DatePrepared',
+    schemata="Dates",
+    readonly=True,
+    widget=ComputedWidget(
+        label=_('Date Prepared'),
+        description=_("The date this Work Order was prepared.")
+    )
+)
+
+DateReleased = ExtStringField(
+    'DateReleased',
+    schemata="Dates",
+    readonly=True,
+    widget=ComputedWidget(
+        label=_('Date Released'),
+        description=_('Work Order released.')
+    )
+)
+
+DateReceived = ExtStringField(
+    'DateReceived',
+    schemata="Dates",
+    readonly=True,
+    widget=ComputedWidget(
+        label=_('Date Received'),
+        description=_('Shows when the Work Order was received.')
+    )
+)
+
+DateTested = ExtStringField(
+    'DateTested',
+    schemata="Dates",
+    readonly=True,
+    widget=ComputedWidget(
+        label=_('Date Tested'),
+        description=_("The date this Work Order was flagged tested.")
+    )
+)
+
+DatePassedQA = ExtStringField(
+    'DatePassedQA',
+    schemata="Dates",
+    readonly=True,
+    widget=ComputedWidget(
+        label=_('Date Passed QA'),
+        description=_('The Work Order QA Passed.')
+    )
+)
+
+DatePublished = ExtStringField(
+    'DatePublished',
+    schemata="Dates",
+    widget=ComputedWidget(
+        label=_('Date Published'),
+        description=_('The Work Order last last published.')
+    )
+)
+
+DateCancelled = ExtStringField(
+    'DateCancelled',
+    schemata="Dates",
+    widget=ComputedWidget(
+        label=_('Date Cancelled'),
+        description=_('Contains a date, if the Work Order has been cancelled.')
+    )
+)
+
+DateOfRetractions = ExtLinesField(
+    'DateOfRetractions',
+    schemata="Dates",
+    widget=ComputedWidget(
+        label=_('Date Of AR Retractions'),
+        description=_('Show retraction dates for all ARs inside this Work Order.')
+    )
+)
+
+DateQADue = ExtDateTimeField(
+    'DateQADue',
+    schemata="Dates",
+    widget=DateTimeWidget(
+        label=_('Date QA Due'),
+        description=_("Date when QA should be due"))
+)
+
+DatePublicationDue = ExtDateTimeField(
+    'DatePublicationDue',
+    schemata="Dates",
+    widget=DateTimeWidget(
+        label=_('Date Publications Due'),
+        description=_("Date when Publication should be due"))
+)
+
+DateOfExpiry = ExtStringField(
+    'DateOfExpiry',
+    schemata="Dates",
+    readonly=True,
+    widget=DateTimeWidget(
+        label=_('Date Of Expiry'),
+        description=_("Expiry date of samples in this Work Order")
+    )
+)
+
+DateDisposed = ExtStringField(
+    'DateDisposed',
+    schemata="Dates",
+    readonly=True,
+    widget=ComputedWidget(
+        label=_('Date Of Disposal (or return to client)'),
+        description=_("Disposal date of samples in this Work Order")
+    )
+)
+
 
 ActivitySampled = ExtStringField(
     'ActivitySampled',
@@ -138,126 +274,6 @@ NonStandardMethodInstructions = ExtTextField(
     ),
 )
 
-DateApproved = ExtStringField(
-    'DateApproved',
-    schemata="Dates",
-    mode="r",
-    widget=StringWidget(
-        label=_('Date Approved'),
-        visible={'view': 'visible',
-                 'edit': 'visible'}
-    )
-)
-
-DateReceived = ExtStringField(
-    'DateReceived',
-    schemata="Dates",
-    mode="r",
-    widget=StringWidget(
-        label=_('Date Received')
-    )
-)
-
-DateAccepted = ExtStringField(
-    'DateAccepted',
-    schemata="Dates",
-    mode="r",
-    widget=StringWidget(
-        label=_('Date Accepted')
-    )
-)
-
-DateReleased = ExtStringField(
-    'DateReleased',
-    schemata="Dates",
-    mode="r",
-    widget=StringWidget(
-        label=_('Date Released')
-    )
-)
-
-DatePrepared = ExtStringField(
-    'DatePrepared',
-    schemata="Dates",
-    mode="r",
-    widget=StringWidget(
-        label=_('Date Prepared')
-    )
-)
-
-DateTested = ExtStringField(
-    'DateTested',
-    schemata="Dates",
-    mode="r",
-    widget=StringWidget(
-        label=_('Date Tested')
-    )
-)
-
-DateQADue = ExtDateTimeField(
-    'DateQADue',
-    schemata="Dates",
-    widget=DateTimeWidget(label=_('Date QA Due'))
-)
-
-DatePassedQA = ExtStringField(
-    'DatePassedQA',
-    schemata="Dates",
-    mode="r",
-    widget=StringWidget(
-        label=_('Date Passed QA')
-    )
-)
-
-DatePublicationDue = ExtDateTimeField(
-    'DatePublicationDue',
-    schemata="Dates",
-    widget=DateTimeWidget(label=_('Date Publications Due'))
-)
-
-DatePublished = ExtStringField(
-    'DatePublished',
-    schemata="Dates",
-    mode="r",
-    widget=StringWidget(
-        label=_('Date Published')
-    )
-)
-
-DateOfExpiry = ExtStringField(
-    'DateOfExpiry',
-    schemata="Dates",
-    mode="r",
-    widget=StringWidget(
-        label=_('Date Of Expiry')
-    )
-)
-
-DateDisposed = ExtStringField(
-    'DateDisposed',
-    schemata="Dates",
-    mode="r",
-    widget=StringWidget(
-        label=_('Date Of Disposal (or return to client)')
-    )
-)
-
-DateCancelled = ExtStringField(
-    'DateCancelled',
-    schemata="Dates",
-    mode="r",
-    widget=StringWidget(label=_('Date Cancelled'))
-)
-
-DateOfRetractions = ExtLinesField(
-    'DateOfRetractions',
-    schemata="Dates",
-    mode="r",
-    widget=TextAreaWidget(
-        label=_('Date Of AR Retractions')
-    )
-)
-
 
 class BatchSchemaExtender(object):
     adapts(IBatch)
@@ -275,20 +291,23 @@ class BatchSchemaExtender(object):
         ExceptionalHazards,
         NonStandardMethodInstructions,
         ApprovedExceptionsToStandardPractice,
+
         DateApproved,
-        DateReceived,
         DateAccepted,
-        DateReleased,
         DatePrepared,
+        DateReleased,
+        DateReceived,
         DateTested,
         DateQADue,
-        DatePassedQA,
         DatePublicationDue,
-        DatePublished,
         DateOfExpiry,
         DateDisposed,
+
+        DatePassedQA,
+        DatePublished,
         DateCancelled,
         DateOfRetractions,
+
     ]
 
     def __init__(self, context):
@@ -313,6 +332,7 @@ class BatchSchemaExtender(object):
             "ClientOrderNumber",        ##
             "ClientReference",          ##
             "ReturnSampleToClient",     ##
+            "Priority",
             "SamplingDate",
             "SampleType",
             "SampleMatrix",
