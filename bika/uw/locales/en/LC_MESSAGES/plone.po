@@ -899,7 +899,7 @@ msgstr "Add attachment"
 
 #
 msgid "batch_accept_transition_title"
-msgstr "Accepte"
+msgstr "Accept"
 
 #
 msgid "batch_approve_transition_title"
