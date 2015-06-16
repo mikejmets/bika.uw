@@ -1,19 +1,61 @@
+from Products.CMFCore.utils import getToolByName
 from bika.lims import bikaMessageFactory as _
 
 from archetypes.schemaextender.interfaces import IOrderableSchemaExtender
 from archetypes.schemaextender.interfaces import ISchemaModifier
+from bika.lims.browser import ulocalized_time as ut
 from bika.lims.browser.widgets import DateTimeWidget
 from bika.lims.fields import *
 from bika.lims.interfaces import IBatch
 from Products.Archetypes.public import *
 from zope.component import adapts
 
-from bika.lims.browser.widgets import ReferenceWidget
 
-DateApproved = ExtStringField(
+class WorkflowDateField(ExtStringField):
+    """Used to show workflow history dates as Field Values in the UI.
+    """
+
+    def get(self, instance):
+        """This getter contains a simple lookup table; The most recent
+        review_history entry's 'time' value will be used, where
+        state_title == workflow_state_id
+        """
+        field_state_lookup = {
+            'DateApproved': 'approved',
+            'DateReceived': 'received',
+            'DateAccepted': 'accepted',
+            'DateReleased': 'released',
+            'DatePrepared': 'prepared',
+            'DateTested': 'tested',
+            'DatePassedQA': 'passed_qa',
+            'DatePublished': 'published',
+            'DateCancelled': 'cancelled',
+        }
+        workflow = getToolByName(instance, 'portal_workflow')
+        review_history = list(workflow.getInfoFor(instance, 'review_history'))
+        # invert the list, so we always see the most recent matching event
+        review_history.reverse()
+        try:
+            state_id = field_state_lookup[self.getName()]
+        except:
+            raise RuntimeError("field %s.%s not in field_state_lookup" %
+                               instance, self.getName())
+        for event in review_history:
+            if event['review_state'] == state_id:
+                value = ut(event['time'],
+                           long_format=True,
+                           time_only=False,
+                           context=instance)
+                return value
+        return None
+
+    def set(self, instance, value):
+        return
+
+
+DateApproved = WorkflowDateField(
     'DateApproved',
     schemata="Dates",
-    readonly=True,
     widget=ComputedWidget(
         label=_('Date Approved'),
         description=_('The date the WOrk Order was approved.'),
@@ -22,38 +64,7 @@ DateApproved = ExtStringField(
     )
 )
 
-
-DateAccepted = ExtStringField(
-    'DateAccepted',
-    schemata="Dates",
-    readonly=True,
-    widget=ComputedWidget(
-        label=_('Date Accepted'),
-        description=_('The date the Work Order was accepted.')
-    )
-)
-
-DatePrepared = ExtStringField(
-    'DatePrepared',
-    schemata="Dates",
-    readonly=True,
-    widget=ComputedWidget(
-        label=_('Date Prepared'),
-        description=_("The date this Work Order was prepared.")
-    )
-)
-
-DateReleased = ExtStringField(
-    'DateReleased',
-    schemata="Dates",
-    readonly=True,
-    widget=ComputedWidget(
-        label=_('Date Released'),
-        description=_('Work Order released.')
-    )
-)
-
-DateReceived = ExtStringField(
+DateReceived = WorkflowDateField(
     'DateReceived',
     schemata="Dates",
     readonly=True,
@@ -63,7 +74,37 @@ DateReceived = ExtStringField(
     )
 )
 
-DateTested = ExtStringField(
+DateAccepted = WorkflowDateField(
+    'DateAccepted',
+    schemata="Dates",
+    readonly=True,
+    widget=ComputedWidget(
+        label=_('Date Accepted'),
+        description=_('The date the Work Order was accepted.')
+    )
+)
+
+DateReleased = WorkflowDateField(
+    'DateReleased',
+    schemata="Dates",
+    readonly=True,
+    widget=ComputedWidget(
+        label=_('Date Released'),
+        description=_('Work Order released.')
+    )
+)
+
+DatePrepared = WorkflowDateField(
+    'DatePrepared',
+    schemata="Dates",
+    readonly=True,
+    widget=ComputedWidget(
+        label=_('Date Prepared'),
+        description=_("The date this Work Order was prepared.")
+    )
+)
+
+DateTested = WorkflowDateField(
     'DateTested',
     schemata="Dates",
     readonly=True,
@@ -73,7 +114,7 @@ DateTested = ExtStringField(
     )
 )
 
-DatePassedQA = ExtStringField(
+DatePassedQA = WorkflowDateField(
     'DatePassedQA',
     schemata="Dates",
     readonly=True,
@@ -83,7 +124,7 @@ DatePassedQA = ExtStringField(
     )
 )
 
-DatePublished = ExtStringField(
+DatePublished = WorkflowDateField(
     'DatePublished',
     schemata="Dates",
     widget=ComputedWidget(
@@ -92,7 +133,7 @@ DatePublished = ExtStringField(
     )
 )
 
-DateCancelled = ExtStringField(
+DateCancelled = WorkflowDateField(
     'DateCancelled',
     schemata="Dates",
     widget=ComputedWidget(
@@ -106,7 +147,8 @@ DateOfRetractions = ExtLinesField(
     schemata="Dates",
     widget=ComputedWidget(
         label=_('Date Of AR Retractions'),
-        description=_('Show retraction dates for all ARs inside this Work Order.')
+        description=_(
+            'Show retraction dates for all ARs inside this Work Order.')
     )
 )
 
@@ -145,7 +187,6 @@ DateDisposed = ExtStringField(
         description=_("Disposal date of samples in this Work Order")
     )
 )
-
 
 ActivitySampled = ExtStringField(
     'ActivitySampled',
@@ -322,16 +363,16 @@ class BatchSchemaExtender(object):
             "description",
             "BatchDate",
             "BatchLabels",
-            "ClientProjectName",        ## These are visible by default,
-            "ClientBatchID",            ## and hidden in non-Client batches
-            "Contact",                  ##
-            "CCContact",                ##
-            "CCEmails",                 ##
-            "InvoiceContact",           ##
-            "ClientBatchComment",       ##
-            "ClientOrderNumber",        ##
-            "ClientReference",          ##
-            "ReturnSampleToClient",     ##
+            "ClientProjectName",  ## These are visible by default,
+            "ClientBatchID",  ## and hidden in non-Client batches
+            "Contact",  ##
+            "CCContact",  ##
+            "CCEmails",  ##
+            "InvoiceContact",  ##
+            "ClientBatchComment",  ##
+            "ClientOrderNumber",  ##
+            "ClientReference",  ##
+            "ReturnSampleToClient",  ##
             "Priority",
             "SamplingDate",
             "SampleType",
@@ -377,9 +418,9 @@ class BatchSchemaExtender(object):
         ]
         schematas["Dates"] = [
             ## "BatchDate",
-            "DateApproved",
             "SamplingDate",
             ## "DateSampled",
+            "DateApproved",
             "DateReceived",
             "DateAccepted",
             "DateReleased",
