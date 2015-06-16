@@ -7,6 +7,19 @@ Type:,Workflow,,,,,,,,,,,,,,
 State variable:,review_state,,,,,,,,,,,,,,
 ,,,,,,,,,,,,,,,
 [State],,,,,,,,,,,,,,,
+Id:,open,,,,,,,,,,,,,,
+Title:,Open,,,,,,,,,,,,,,
+Description:,Allows incorrectly created bika.lims batches to join the Work Order workflow,,,,,,,,,,,,,,
+Transitions,"batch_approve",,,,,,,,,,,,,,
+Permissions,Acquire,Owner,Manager,LabManager,LabClerk,Analyst,Sampler,Preserver,Verifier,RegulatoryInspector,Publisher,Reader,Editor,Contributor,Anonymous
+View,N,N,Y,Y,Y,Y,N,N,Y,Y,N,N,N,N,N
+BIKA: Edit Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Close Batch,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+BIKA: Reopen Batch,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N
+BIKA: Add Analysis Request,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+Modify portal content,N,N,Y,Y,Y,N,N,N,N,N,N,N,N,N,N
+,,,,,,,,,,,,,,,
+[State],,,,,,,,,,,,,,,
 Id:,requested,,,,,,,,,,,,,,
 Title:,Requested,,,,,,,,,,,,,,
 Description:,,,,,,,,,,,,,,,
