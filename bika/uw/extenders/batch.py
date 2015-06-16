@@ -53,6 +53,39 @@ class WorkflowDateField(ExtStringField):
         return
 
 
+class RetractionDatesField(ExtStringField):
+    """Show a list of all retractions in this Work Order, and their dates
+    """
+
+    def get(self, instance):
+        """This getter returns a multiline string, each line contains:
+        <Analysis Request> <Analysis Service> <actor> <time>
+        """
+        workflow = getToolByName(instance, 'portal_workflow')
+
+        result = []
+        for ar in instance.getAnalysisRequests():
+            for analysis in ar.getAnalyses(full_objects=True):
+                review_history = list(workflow.getInfoFor(analysis,
+                                                          'review_history'))
+                review_history.reverse()
+                for event in review_history:
+                    if event['review_state'] == "retracted":
+                        result.append("%-20s %-20s %-10s %s" % (
+                            ar.getId(),
+                            analysis.getId(),
+                            '' if event['actor'] is None else event['actor'],
+                            ut(event['time'],
+                               long_format=True,
+                               time_only=False,
+                               context=instance)
+                        ))
+        return result
+
+    def set(self, instance, value):
+        return
+
+
 DateApproved = WorkflowDateField(
     'DateApproved',
     schemata="Dates",
@@ -142,13 +175,15 @@ DateCancelled = WorkflowDateField(
     )
 )
 
-DateOfRetractions = ExtLinesField(
+DateOfRetractions = RetractionDatesField(
     'DateOfRetractions',
     schemata="Dates",
-    widget=ComputedWidget(
+    widget=LinesWidget(
         label=_('Date Of AR Retractions'),
         description=_(
-            'Show retraction dates for all ARs inside this Work Order.')
+            'Show retraction dates for all ARs inside this Work Order. Each '
+            'line contains AR ID, Analysis ID, username, and a timestamp.'),
+        size=10,
     )
 )
 
