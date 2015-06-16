@@ -106,6 +106,9 @@ msgstr "Sample Site"
 msgid "Sample Points"
 msgstr "Sample Sites"
 
+msgid "SampleType"
+msgstr "SampleMedium"
+
 msgid "Sample Type"
 msgstr "Sample Medium"
 

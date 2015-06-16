@@ -173,6 +173,9 @@ msgstr "Sample site"
 msgid "Sample type"
 msgstr "Sample medium"
 #
+msgid "SampleType"
+msgstr "SampleMedium"
+#
 msgid ""
 "Select a default preservation for this analysis service. If the preservation "
 "depends on the sample type combination, specify a preservation per sample "
@@ -4066,10 +4069,6 @@ msgstr ""
 #
 # File: bika.lims/bika/lims/controlpanel/bika_sampletypes.py, line: 56
 msgid "SampleMatrix"
-msgstr ""
-#
-# File: bika.lims/bika/lims/content/analysisrequest.py, line: 543
-msgid "SampleType"
 msgstr ""
 #
 # File: bika.lims/bika/lims/browser/analysisrequest/analysisrequests.py, line: 108

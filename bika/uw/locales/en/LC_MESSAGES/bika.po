@@ -12,7 +12,7 @@ msgstr ""
 "Language-Code: en\n"
 "Language-Name: English\n"
 "Preferred-Encodings: utf-8 latin1\n"
-"Domain: bika\n"
+"Domain: DOMAIN\n"
 
 #
 # File: bika.lims/bika/lims/browser/templates/login_details.pt, line: 18
@@ -998,9 +998,8 @@ msgid "Batch ID"
 msgstr "Work Order ID"
 
 #
-# File: bika.lims/bika/lims/content/batch.py, line: 405
 msgid "Batch Labels"
-msgstr ""
+msgstr "Work Order Categories"
 
 #
 msgid "Batches"
@@ -4589,9 +4588,8 @@ msgid "SampleMatrix"
 msgstr ""
 
 #
-# File: bika.lims/bika/lims/content/analysisrequest.py, line: 543
 msgid "SampleType"
-msgstr ""
+msgstr "SampleMedium"
 
 #
 # File: bika.lims/bika/lims/browser/analysisrequest/analysisrequests.py, line: 108
@@ -5265,9 +5263,8 @@ msgid "The lab is not accredited, or accreditation has not been configured. "
 msgstr ""
 
 #
-# File: bika.lims/bika/lims/content/batch.py, line: 406
 msgid "The lab's own label for the batch"
-msgstr ""
+msgstr "The categories for the Work Order"
 
 #
 # File: bika.lims/bika/lims/content/analysiscategory.py, line: 28

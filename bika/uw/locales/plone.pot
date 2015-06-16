@@ -173,6 +173,9 @@ msgstr "Sample site"
 msgid "Sample type"
 msgstr "Sample medium"
 #
+msgid "SampleType"
+msgstr "SampleMedium"
+#
 msgid ""
 "Select a default preservation for this analysis service. If the preservation "
 "depends on the sample type combination, specify a preservation per sample "

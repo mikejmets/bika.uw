@@ -12,7 +12,7 @@ msgstr ""
 "Language-Code: en\n"
 "Language-Name: English\n"
 "Preferred-Encodings: utf-8 latin1\n"
-"Domain: plone\n"
+"Domain: DOMAIN\n"
 
 #
 msgid "AR Imports"
@@ -719,6 +719,10 @@ msgstr "Sample medium"
 # File: bika.lims/bika/lims/profiles/default/types/Client.xml, line: -1
 msgid "SamplePoints"
 msgstr ""
+
+#
+msgid "SampleType"
+msgstr "SampleMedium"
 
 #
 # File: bika.lims/bika/lims/profiles/default/actions.xml, line: -1
