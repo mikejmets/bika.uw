@@ -17,6 +17,7 @@ ClientSampleComment = ExtTextField(
     default_output_type="text/plain",
     acquire=True,
     widget=TextAreaWidget(
+        render_own_label=True,
         label=_('Client Sample Comment'),
         description=_("These comments will be applied as defaults in Client Remarks field for new Samples."),
     )
@@ -28,9 +29,25 @@ AmountSampled = ExtStringField(
     required=False,
     acquire=True,
     widget=StringWidget(
+        render_own_label=True,
         label=_('Amount Sampled'),
         visible={'view': 'visible',
-                 'edit': 'visible'}
+                 'edit': 'visible',
+                 'header_table': 'visible'}
+    ),
+)
+
+# This is acquired here from batch, and acquired by Sample.
+AmountSampledMetric = ExtStringField(
+    'AmountSampledMetric',
+    required=False,
+    acquire=True,
+    widget=StringWidget(
+        render_own_label=True,
+        label=_('Amount Sampled Metric'),
+        visible={'view': 'visible',
+                 'edit': 'visible',
+                 'header_table': 'visible'}
     ),
 )
 
@@ -42,6 +59,7 @@ ExceptionalHazards = ExtTextField(
     default_output_type="text/plain",
     acquire=True,
     widget=TextAreaWidget(
+        render_own_label=True,
         label=_('Exceptional hazards'),
         description=_("The value selected here will be set as the default for new Samples."),
     )
@@ -54,6 +72,7 @@ class SampleSchemaExtender(object):
     fields = [
         ClientSampleComment,
         AmountSampled,
+        AmountSampledMetric,
         ExceptionalHazards,
     ]
 

@@ -18,6 +18,7 @@ ClientSampleComment = ExtTextField(
     schemata = "AnalysisRequest and Sample Fields",
     acquire=True,
     widget=TextAreaWidget(
+        render_own_label=True,
         label=_('Client Sample Comment'),
         description=_("These comments will be applied as defaults in Client Remarks field for new Samples."),
     )
@@ -30,9 +31,26 @@ AmountSampled = ExtStringField(
     schemata = "Work Order Instructions",
     acquire=True,
     widget=StringWidget(
+        render_own_label=True,
         label=_('Amount Sampled'),
         visible={'view': 'visible',
-                 'edit': 'visible'}
+                 'edit': 'visible',
+                 'header_table': 'visible'}
+    ),
+)
+
+# This is acquired here from batch, and acquired by Sample.
+AmountSampledMetric = ExtStringField(
+    'AmountSampledMetric',
+    required=False,
+    schemata = "Work Order Instructions",
+    acquire=True,
+    widget=StringWidget(
+        render_own_label=True,
+        label=_('Amount Sampled Metric'),
+        visible={'view': 'visible',
+                 'edit': 'visible',
+                 'header_table': 'visible'}
     ),
 )
 
@@ -45,6 +63,7 @@ ExceptionalHazards = ExtTextField(
     schemata = "Hazards",
     acquire=True,
     widget=TextAreaWidget(
+        render_own_label=True,
         label=_('Exceptional hazards'),
         description=_("The value selected here will be set as the default for new Samples."),
     )
@@ -57,6 +76,7 @@ NonStandardMethodInstructions = ExtTextField(
     schemata = "Work Order Instructions",
     acquire=True,
     widget=TextAreaWidget(
+        render_own_label=True,
         label=_('Non-standard Method Instructions'),
         visible={'view': 'visible',
                  'edit': 'visible'}
@@ -70,6 +90,7 @@ ApprovedExceptionsToStandardPractice = ExtTextField(
     schemata = "Work Order Instructions",
     acquire=True,
     widget=TextAreaWidget(
+        render_own_label=True,
         label=_('Approved Exceptions To Standard Practice'),
         visible={'view': 'visible',
                  'edit': 'visible'}
@@ -83,6 +104,7 @@ class AnalysisRequestSchemaExtender(object):
     fields = [
         ClientSampleComment,
         AmountSampled,
+        AmountSampledMetric,
         ExceptionalHazards,
         NonStandardMethodInstructions,
         ApprovedExceptionsToStandardPractice,
