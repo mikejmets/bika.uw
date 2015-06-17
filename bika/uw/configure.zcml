@@ -23,5 +23,6 @@
 
   <include package=".browser"/>
   <include package=".extenders"/>
+  <include package=".workflow"/>
 
 </configure>
