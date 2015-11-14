@@ -1,14 +1,20 @@
-from Products.CMFCore.utils import getToolByName
-from bika.lims import bikaMessageFactory as _
-
+from Products.CMFPlone.interfaces import IPloneSiteRoot
 from archetypes.schemaextender.interfaces import IOrderableSchemaExtender
 from archetypes.schemaextender.interfaces import ISchemaModifier
+from bika.lims import bikaMessageFactory as _
 from bika.lims.browser import ulocalized_time as ut
 from bika.lims.browser.widgets import DateTimeWidget
+from bika.lims.browser.widgets import ReferenceWidget as brw
 from bika.lims.fields import *
-from bika.lims.interfaces import IBatch
+from bika.lims.interfaces import IBatch, IClient
+from plone import api
 from Products.Archetypes.public import *
+from Products.CMFCore import permissions
+from Products.CMFCore.utils import getToolByName
 from zope.component import adapts
+
+import sys
+from bika.lims.utils import getUsers
 
 
 class WorkflowDateField(ExtStringField):
@@ -85,13 +91,373 @@ class RetractionDatesField(ExtStringField):
     def set(self, instance, value):
         return
 
+##############################################################################
+##############################################################################
+# Batch fields which are used as default values for Sample and AR
+
+Contact = ExtReferenceField(
+    'Contact',
+    required=0,
+    vocabulary_display_path_bound=sys.maxsize,
+    allowed_types=('Contact',),
+    relationship='BatchContact',
+    mode="rw",
+    read_permission=permissions.View,
+    write_permission=permissions.ModifyPortalContent,
+    widget=brw(
+        label=_("Contact"),
+        description=_("The Client Contact person for this batch"),
+        size=20,
+        helper_js=("bika_widgets/referencewidget.js",),
+        visible={'edit': 'visible',
+                 'view': 'visible'},
+        base_query={'inactive_state': 'active'},
+        showOn=True,
+        popup_width='400px',
+        colModel=[{'columnName': 'UID', 'hidden': True},
+                  {'columnName': 'Fullname',
+                   'width': '50',
+                   'label': _('Name')},
+                  {'columnName': 'EmailAddress',
+                   'width': '50',
+                   'label': _('Email Address')},
+                  ],
+    ),
+)
+CCContact = ExtReferenceField(
+    'CCContact',
+    required=0,
+    multiValued=True,
+    vocabulary_display_path_bound=sys.maxsize,
+    allowed_types=('Contact',),
+    relationship='BatchCCContact',
+    mode="rw",
+    read_permission=permissions.View,
+    write_permission=permissions.ModifyPortalContent,
+    widget=brw(
+        label=_("CC Contact"),
+        description=_("These Client Contacts will be copied in email "
+                      "communication regarding this batch, e.g. receive "
+                      "emailed results"),
+        size=20,
+        helper_js=("bika_widgets/referencewidget.js",),
+        visible={'edit': 'visible',
+                 'view': 'visible',
+                 },
+        base_query={'inactive_state': 'active'},
+        showOn=True,
+        popup_width='400px',
+        colModel=[{'columnName': 'UID', 'hidden': True},
+                  {'columnName': 'Fullname',
+                   'width': '50',
+                   'label': _('Name')},
+                  {'columnName': 'EmailAddress',
+                   'width': '50',
+                   'label': _('Email Address')},
+                  ],
+    ),
+)
+CCEmails = ExtLinesField(
+    'CCEmails',
+    searchable=True,
+    required=0,
+    widget=LinesWidget(
+        rows=5,
+        cols=20,
+        style="width:25ex;font-size:85%;",
+        label=_("CC Emails"),
+        description=_("Add further email addresses to be copied"),
+    )
+)
+InvoiceContact = ExtReferenceField(
+    'InvoiceContact',
+    required=0,
+    vocabulary_display_path_bound=sys.maxsize,
+    allowed_types=('Contact',),
+    relationship='BatchInvoiceContact',
+    mode="rw",
+    read_permission=permissions.View,
+    write_permission=permissions.ModifyPortalContent,
+    widget=brw(
+        label=_("Invoice Contact"),
+        description=_("The Client Contact to whom invoices for this batch "
+                      "will be sent"),
+        size=20,
+        helper_js=("bika_widgets/referencewidget.js",),
+        visible={'edit': 'visible',
+                 'view': 'visible',
+                 },
+        base_query={'inactive_state': 'active'},
+        showOn=True,
+        popup_width='400px',
+        colModel=[{'columnName': 'UID', 'hidden': True},
+                  {'columnName': 'Fullname',
+                   'width': '50',
+                   'label': _('Name')},
+                  {'columnName': 'EmailAddress',
+                   'width': '50',
+                   'label': _('Email Address')},
+                  ],
+    ),
+)
+Analysts = ExtLinesField(
+    'Analysts',
+    multiValued=True,
+    size=8,
+    mode="rw",
+    read_permission=permissions.View,
+    write_permission=permissions.ModifyPortalContent,
+    vocabulary_factory="bika.lims.vocabularies.Analysts",
+    widget=MultiSelectionWidget(
+        format='select',
+        label=_("Analysts"),
+        description=_("The analysts that are assigned to the batch"),
+        visible={'edit': 'visible',
+                 'view': 'visible',
+                 },
+    ),
+)
+LeadAnalyst = ExtStringField(
+    'LeadAnalyst',
+    mode="rw",
+    read_permission=permissions.View,
+    write_permission=permissions.ModifyPortalContent,
+    vocabulary_factory="bika.lims.vocabularies.Analysts",
+    widget=SelectionWidget(
+        format='select',
+        label=_("Lead Analyst"),
+        description=_("The analyst responsible for the analyses and QC of "
+                      "this batch"),
+        visible={'edit': 'visible',
+                 'view': 'visible',
+                 },
+    ),
+)
+ClientProjectName = ExtStringField(
+    'ClientProjectName',
+    searchable=True,
+    required=0,
+    widget=StringWidget(
+        label=_("Client Project Name"),
+        description=_("The project name the client provided for the batch"),
+    )
+)
+SampleSource = ExtStringField(
+    'SampleSource',
+    searchable=True,
+    required=0,
+    widget=StringWidget(
+        label=_("Sample Source"),
+        description=_(""),
+    )
+)
+SampleType = ExtReferenceField(
+    'SampleType',
+    required=0,
+    allowed_types='SampleType',
+    relationship='BatchSampleType',
+    mode="rw",
+    read_permission=permissions.View,
+    write_permission=permissions.ModifyPortalContent,
+    widget=brw(
+        label=_("Sample Type"),
+        description=_("Create a new sample of this type"),
+        size=20,
+        visible={'edit': 'visible',
+                 'view': 'visible',
+                 'add': 'edit',
+                 },
+        catalog_name='bika_setup_catalog',
+        base_query={'inactive_state': 'active'},
+        showOn=True,
+    ),
+)
+SampleMatrix = ExtReferenceField(
+    'SampleMatrix',
+    required=False,
+    allowed_types='SampleMatrix',
+    relationship='BatchSampleMatrix',
+    mode="rw",
+    read_permission=permissions.View,
+    write_permission=permissions.ModifyPortalContent,
+    widget=brw(
+        label=_("Sample Matrix"),
+        description=_("The sample matrix the sample is 'categorised' in"),
+        size=20,
+        visible={'edit': 'visible',
+                 'view': 'visible',
+                 },
+        catalog_name='bika_setup_catalog',
+        base_query={'inactive_state': 'active'},
+        showOn=True,
+    ),
+)
+Profile = ExtReferenceField(
+    'Profile',
+    allowed_types=('AnalysisProfile',),
+    relationship='BatchAnalysisProfile',
+    mode="rw",
+    read_permission=permissions.View,
+    write_permission=permissions.ModifyPortalContent,
+    widget=brw(
+        label=_("Analysis Profile"),
+        description=_("Auto select all the analyses included in the profile "
+                      "or 'panel'"),
+        size=20,
+        visible={'edit': 'visible',
+                 'view': 'visible',
+                 },
+        catalog_name='bika_setup_catalog',
+        base_query={'inactive_state': 'active'},
+        showOn=True,
+    ),
+)
+Container = ExtReferenceField(
+    'Container',
+    allowed_types=('ContainerType',),
+    relationship='AnalysisRequestContainerType',
+    mode="rw",
+    read_permission=permissions.View,
+    write_permission=permissions.ModifyPortalContent,
+    widget=brw(
+        label=_('Default Container'),
+        description=_('Default container for new sample partitions'),
+        size=20,
+        visible={'edit': 'visible',
+                 'view': 'visible',
+                 },
+        catalog_name='bika_setup_catalog',
+        base_query={'inactive_state': 'active'},
+        showOn=True,
+    ),
+)
+ClientPONumber = ExtStringField(
+    'ClientPONumber',
+    searchable=True,
+    mode="rw",
+    read_permission=permissions.View,
+    write_permission=permissions.ModifyPortalContent,
+    widget=StringWidget(
+        label=_('Client PO Number'),
+        description=_("The purchase order number provided by the client"),
+        size=20,
+        visible={'edit': 'visible',
+                 'view': 'visible',
+                 },
+    ),
+)
+ClientBatchComment = ExtTextField(
+    'ClientBatchComment',
+    default_content_type='text/x-web-intelligent',
+    allowable_content_types=('text/plain',),
+    default_output_type="text/plain",
+    widget=TextAreaWidget(
+        label=_('Client Batch Comment'),
+        description=_("Additional comment to the batch provided by the client"),
+    )
+)
+DateSampled = ExtDateTimeField(
+    'DateSampled',
+    mode="rw",
+    read_permission=permissions.View,
+    write_permission=permissions.ModifyPortalContent,
+    widget=DateTimeWidget(
+        label=_("Date Sampled"),
+        size=20,
+        visible={'edit': 'visible',
+                 'view': 'visible',
+                 },
+    )
+)
+StorageLocation = ExtReferenceField(
+    'StorageLocation',
+    allowed_types='StorageLocation',
+    relationship='AnalysisRequestStorageLocation',
+    mode="rw",
+    read_permission=permissions.View,
+    write_permission=permissions.ModifyPortalContent,
+    widget=brw(
+        label=_("Storage Location"),
+        description=_("Location where sample is kept"),
+        size=20,
+        visible={'edit': 'visible',
+                 'view': 'visible',
+                 },
+        catalog_name='bika_setup_catalog',
+        base_query={'inactive_state': 'active'},
+        showOn=True,
+    ),
+)
+ReturnSampleToClient = ExtBooleanField(
+    'ReturnSampleToClient',
+    widget=BooleanWidget(
+        label=_("Return Sample To Client"),
+        description=_("Select to indicate whether the sample must "
+                      "be returned to the client"),
+    )
+)
+SampleTemperature = ExtStringField(
+    'SampleTemperature',
+    widget=StringWidget(
+        label=_('Sample Temperature'),
+        description=_("The temperature of the individual samples"),
+    )
+)
+SampleCondition = ExtReferenceField(
+    'SampleCondition',
+    vocabulary_display_path_bound=sys.maxsize,
+    allowed_types=('SampleCondition',),
+    relationship='BatchSampleCondition',
+    mode="rw",
+    read_permission=permissions.View,
+    write_permission=permissions.ModifyPortalContent,
+    widget=brw(
+        label=_("Sample Condition"),
+        description=_("The condition of the individual samples on arrival"),
+        visible={'edit': 'visible',
+                 'view': 'visible',
+                 },
+        catalog_name='bika_setup_catalog',
+        base_query={'inactive_state': 'active'},
+        showOn=True,
+    ),
+)
+BioHazardous = ExtBooleanField(
+    'BioHazardous',
+    widget=BooleanWidget(
+        label=_("Hazardous"),
+    )
+)
+Methods = ExtReferenceField(
+    'Methods',
+    required=0,
+    multiValued=True,
+    allowed_types=('Method',),
+    relationship='BatchMethods',
+    mode="rw",
+    read_permission=permissions.View,
+    write_permission=permissions.ModifyPortalContent,
+    vocabulary_factory="bika.lims.vocabularies.Methods",
+    widget=MultiSelectionWidget(
+        format='select',
+        size=10,
+        label=_("Methods"),
+        description=_("Methods available for analyses in this batch"),
+        visible={'edit': 'visible',
+                 'view': 'visible',
+                 },
+    ),
+)
+
+##############################################################################
+##############################################################################
+# Date fields
 
 DateApproved = WorkflowDateField(
     'DateApproved',
-    schemata="Dates",
     widget=ComputedWidget(
         label=_('Date Approved'),
-        description=_('The date the WOrk Order was approved.'),
+        description=_('The date the Work Order was approved.'),
         visible={'view': 'visible',
                  'edit': 'visible'}
     )
@@ -99,7 +465,6 @@ DateApproved = WorkflowDateField(
 
 DateReceived = WorkflowDateField(
     'DateReceived',
-    schemata="Dates",
     readonly=True,
     widget=ComputedWidget(
         label=_('Date Received'),
@@ -109,7 +474,6 @@ DateReceived = WorkflowDateField(
 
 DateAccepted = WorkflowDateField(
     'DateAccepted',
-    schemata="Dates",
     readonly=True,
     widget=ComputedWidget(
         label=_('Date Accepted'),
@@ -119,7 +483,6 @@ DateAccepted = WorkflowDateField(
 
 DateReleased = WorkflowDateField(
     'DateReleased',
-    schemata="Dates",
     readonly=True,
     widget=ComputedWidget(
         label=_('Date Released'),
@@ -129,7 +492,6 @@ DateReleased = WorkflowDateField(
 
 DatePrepared = WorkflowDateField(
     'DatePrepared',
-    schemata="Dates",
     readonly=True,
     widget=ComputedWidget(
         label=_('Date Prepared'),
@@ -139,7 +501,6 @@ DatePrepared = WorkflowDateField(
 
 DateTested = WorkflowDateField(
     'DateTested',
-    schemata="Dates",
     readonly=True,
     widget=ComputedWidget(
         label=_('Date Tested'),
@@ -149,7 +510,6 @@ DateTested = WorkflowDateField(
 
 DatePassedQA = WorkflowDateField(
     'DatePassedQA',
-    schemata="Dates",
     readonly=True,
     widget=ComputedWidget(
         label=_('Date Passed QA'),
@@ -159,7 +519,6 @@ DatePassedQA = WorkflowDateField(
 
 DatePublished = WorkflowDateField(
     'DatePublished',
-    schemata="Dates",
     widget=ComputedWidget(
         label=_('Date Published'),
         description=_('The Work Order last last published.')
@@ -168,7 +527,6 @@ DatePublished = WorkflowDateField(
 
 DateCancelled = WorkflowDateField(
     'DateCancelled',
-    schemata="Dates",
     widget=ComputedWidget(
         label=_('Date Cancelled'),
         description=_('Contains a date, if the Work Order has been cancelled.')
@@ -177,7 +535,6 @@ DateCancelled = WorkflowDateField(
 
 DateOfRetractions = RetractionDatesField(
     'DateOfRetractions',
-    schemata="Dates",
     widget=LinesWidget(
         label=_('Date Of AR Retractions'),
         description=_(
@@ -189,7 +546,6 @@ DateOfRetractions = RetractionDatesField(
 
 DateQADue = ExtDateTimeField(
     'DateQADue',
-    schemata="Dates",
     widget=DateTimeWidget(
         label=_('Date QA Due'),
         description=_("Date when QA should be due"))
@@ -197,37 +553,15 @@ DateQADue = ExtDateTimeField(
 
 DatePublicationDue = ExtDateTimeField(
     'DatePublicationDue',
-    schemata="Dates",
     widget=DateTimeWidget(
         label=_('Date Publications Due'),
         description=_("Date when Publication should be due"))
-)
-
-DateOfExpiry = ExtStringField(
-    'DateOfExpiry',
-    schemata="Dates",
-    readonly=True,
-    widget=DateTimeWidget(
-        label=_('Date Of Expiry'),
-        description=_("Expiry date of samples in this Work Order")
-    )
-)
-
-DateDisposed = ExtStringField(
-    'DateDisposed',
-    schemata="Dates",
-    readonly=True,
-    widget=ComputedWidget(
-        label=_('Date Of Disposal (or return to client)'),
-        description=_("Disposal date of samples in this Work Order")
-    )
 )
 
 ActivitySampled = ExtStringField(
     'ActivitySampled',
     required=False,
     # This is not true, but required to legitimise the schemata.
-    schemata="Create and Approve",
     widget=StringWidget(
         label=_('Activity Sampled'),
         visible={'view': 'visible',
@@ -238,7 +572,6 @@ ActivitySampled = ExtStringField(
 QCBlanksProvided = ExtBooleanField(
     'QCBlanksProvided',
     required=False,
-    schemata="Assign",
     # This is not true, but required to legitimise the schemata.
     widget=BooleanWidget(
         label=_('QC Blanks Provided'),
@@ -250,7 +583,6 @@ QCBlanksProvided = ExtBooleanField(
 MediaLotNr = ExtStringField(
     'MediaLotNr',
     required=False,
-    schemata="Receive and Accept",
     # This is not true, but required to legitimise the schemata.
     widget=StringWidget(
         label=_('Media Lot Number'),
@@ -262,7 +594,6 @@ MediaLotNr = ExtStringField(
 SampleAndQCLotMatch = ExtBooleanField(
     'SampleAndQCLotMatch',
     required=False,
-    schemata="AnalysisRequest and Sample Fields",
     widget=BooleanWidget(
         label=_('Lot for samples matches QC Blanks'),
         visible={'view': 'visible',
@@ -273,7 +604,6 @@ SampleAndQCLotMatch = ExtBooleanField(
 MSDSorSDS = ExtBooleanField(
     'MSDSorSDS',
     required=False,
-    schemata="AnalysisRequest and Sample Fields",
     widget=BooleanWidget(
         label=_('MSDS or SDS provided'),
         visible={'view': 'visible',
@@ -284,22 +614,18 @@ MSDSorSDS = ExtBooleanField(
 ClientSampleComment = ExtTextField(
     'ClientSampleComment',
     default_content_type='text/x-web-intelligent',
-    allowable_content_types=('text/plain', ),
+    allowable_content_types=('text/plain',),
     default_output_type="text/plain",
-    schemata="AnalysisRequest and Sample Fields",
     widget=TextAreaWidget(
         label=_('Client Sample Comment'),
-        description=_(
-            "These comments will be applied as defaults in Client Remarks field for new Samples."),
     )
 )
 
 ExceptionalHazards = ExtTextField(
     'ExceptionalHazards',
     default_content_type='text/x-web-intelligent',
-    allowable_content_types=('text/plain', ),
+    allowable_content_types=('text/plain',),
     default_output_type="text/plain",
-    schemata="Hazards",
     widget=TextAreaWidget(
         label=_('Exceptional hazards'),
         description=_(
@@ -310,7 +636,6 @@ ExceptionalHazards = ExtTextField(
 AmountSampled = ExtStringField(
     'AmountSampled',
     required=False,
-    schemata="Work Order Instructions",
     widget=StringWidget(
         label=_('Amount Sampled'),
         visible={'view': 'visible',
@@ -320,7 +645,6 @@ AmountSampled = ExtStringField(
 AmountSampledMetric = ExtStringField(
     'AmountSampledMetric',
     required=False,
-    schemata="Work Order Instructions",
     widget=StringWidget(
         label=_('Amount Sampled Metric'),
         visible={'view': 'visible',
@@ -331,7 +655,6 @@ AmountSampledMetric = ExtStringField(
 ApprovedExceptionsToStandardPractice = ExtTextField(
     'ApprovedExceptionsToStandardPractice',
     required=False,
-    schemata="Work Order Instructions",
     widget=TextAreaWidget(
         label=_('Approved Exceptions To Standard Practice'),
         visible={'view': 'visible',
@@ -342,7 +665,6 @@ ApprovedExceptionsToStandardPractice = ExtTextField(
 NonStandardMethodInstructions = ExtTextField(
     'NonStandardMethodInstructions',
     required=False,
-    schemata="Work Order Instructions",
     widget=TextAreaWidget(
         label=_('Non-standard Method Instructions'),
         visible={'view': 'visible',
@@ -356,34 +678,50 @@ class BatchSchemaExtender(object):
     implements(IOrderableSchemaExtender)
 
     fields = [
-        ActivitySampled,
-        AmountSampled,
-        AmountSampledMetric,
-        MediaLotNr,
-        QCBlanksProvided,
-        SampleAndQCLotMatch,
-        MSDSorSDS,
-        ClientSampleComment,
-        ExceptionalHazards,
-        NonStandardMethodInstructions,
-        ApprovedExceptionsToStandardPractice,
-
+        Contact,
+        CCContact,
+        CCEmails,
+        InvoiceContact,
+        Analysts,
+        LeadAnalyst,
+        ClientProjectName,
+        SampleSource,
+        SampleType,
+        SampleMatrix,
+        Profile,
+        Container,
+        ClientPONumber,
+        ClientBatchComment,
+        DateSampled,
+        StorageLocation,
+        ReturnSampleToClient,
+        SampleTemperature,
+        SampleCondition,
+        BioHazardous,
+        Methods,
         DateApproved,
-        DateAccepted,
-        DatePrepared,
-        DateReleased,
         DateReceived,
+        DateAccepted,
+        DateReleased,
+        DatePrepared,
         DateTested,
-        DateQADue,
-        DatePublicationDue,
-        DateOfExpiry,
-        DateDisposed,
-
         DatePassedQA,
         DatePublished,
         DateCancelled,
         DateOfRetractions,
-
+        DateQADue,
+        DatePublicationDue,
+        ActivitySampled,
+        QCBlanksProvided,
+        MediaLotNr,
+        SampleAndQCLotMatch,
+        MSDSorSDS,
+        ClientSampleComment,
+        ExceptionalHazards,
+        AmountSampled,
+        AmountSampledMetric,
+        ApprovedExceptionsToStandardPractice,
+        NonStandardMethodInstructions,
     ]
 
     def __init__(self, context):
@@ -395,41 +733,35 @@ class BatchSchemaExtender(object):
 
         schematas["Create and Approve"] = [
             "title",
+            "Client",
             "description",
+            "DateSampled",
             "BatchDate",
             "BatchLabels",
-            "ClientProjectName",  ## These are visible by default,
-            "ClientBatchID",  ## and hidden in non-Client batches
-            "Contact",  ##
-            "CCContact",  ##
-            "CCEmails",  ##
-            "InvoiceContact",  ##
-            "ClientBatchComment",  ##
-            "ClientOrderNumber",  ##
-            "ClientReference",  ##
-            "ReturnSampleToClient",  ##
-            "Priority",
-            "SamplingDate",
+            "ClientProjectName",
+            "ClientBatchID",
+            "Contact",
+            "CCContact",
+            "CCEmails",
+            "InvoiceContact",
+            "ClientBatchComment",
+            "ClientPONumber",
+            "ReturnSampleToClient",
+            "SampleSource",
             "SampleType",
             "SampleMatrix",
-            "PreparationWorkflow",
             "Remarks",
             "InheritedObjects",
             "InheritedObjectsUI",
         ]
         schematas["Receive and Accept"] = [
-            "SamplePoint",
             "StorageLocation",
             ## "ReturnSampleToClient",
             "SampleTemperature",
             "SampleCondition",
-            "SamplingDeviation",
             ## "SampleType",
             ## "SampleMatrix",
-            "DefaultContainerType",
-            ## "SamplingDate",
-            "DateSampled",
-            "Sampler",
+            "Container",
             "ActivitySampled",
             "MediaLotNr",
             "QCBlanksProvided",
@@ -444,35 +776,28 @@ class BatchSchemaExtender(object):
         schematas["Assign"] = [
             "Analysts",
             "LeadAnalyst",
-            "Specification",
             "Methods",
-            "Instruments",
             "Profile",
             "NonStandardMethodInstructions",
             "ApprovedExceptionsToStandardPractice",
         ]
         schematas["Dates"] = [
-            ## "BatchDate",
-            "SamplingDate",
             ## "DateSampled",
+            "DateQADue",
+            "DatePublicationDue",
             "DateApproved",
             "DateReceived",
             "DateAccepted",
             "DateReleased",
             "DatePrepared",
             "DateTested",
-            "DateQADue",
             "DatePassedQA",
-            "DatePublicationDue",
             "DatePublished",
-            "DateOfExpiry",
-            "DateDisposed",
             "DateCancelled",
             "DateOfRetractions",
         ]
 
         return schematas
-
 
     def getFields(self):
         return self.fields
@@ -485,29 +810,50 @@ class BatchSchemaModifier(object):
     def __init__(self, context):
         self.context = context
 
-    def fiddle(self, schema):
+    def hide_fields(self, schema, fieldnames):
+        """Hide fields UW doesn't care to see
         """
-        """
-
-        # Hide fields UW doesn't care to see
-        for fn in ["ARTemplate", ]:
+        for fn in fieldnames:
             if fn in schema:
                 schema[fn].widget.visible = {"view": "invisible",
                                              "edit": "invisible"}
 
-        # Force-show fields that UW does want to see
-        for fn in ["Priority", ]:
-            if fn in schema:
-                schema[fn].widget.visible = {"view": "visible",
-                                             "edit": "visible"}
+    def configure_client_field_visibility(self, schema, fieldnames):
+        """All Client Contact fields must be restricted to show only relevant
+        Contacts.  During creation the batch can be in some weird states
+        and is located inside some odd contexs (TempFolder, PortalFactory),
+        so some wiggling required.  We also can't use schema field accessors
+        directly, as it causes recursion.
+        """
+        client = None
+        # If heirarchy does not exist we're in early creation; skip body.
+        if hasattr(self, 'context') and hasattr(self.context, 'aq_parent'):
+            parent = self.context.aq_parent
+            while not IPloneSiteRoot.providedBy(parent):
+                if IClient.providedBy(parent):
+                    client = parent
+                    break
+                parent = parent.aq_parent
+        return client
 
-        # All Client Contact fields must be restricted to show only relevant
-        # Contacts.
-        client = self.context.getClient()
-        if client:
+    def filter_client_lookups(self, schema, client):
+        if IClient.providedBy(client):
             ids = [c.getId() for c in client.objectValues('Contact')]
             for fn in ["Contact", "CCContact", "InvoiceContact"]:
                 if fn in schema:
                     schema[fn].widget.base_query['id'] = ids
+
+    def fiddle(self, schema):
+        """
+        """
+
+        self.hide_fields(schema, ["Client",
+                                  "BatchDate",
+                                  "InheritedObjectsUI",
+                                  "Remarks"])
+
+        client = self.configure_client_field_visibility(self, schema)
+        if client:
+            self.filter_client_lookups(schema, client)
 
         return schema
