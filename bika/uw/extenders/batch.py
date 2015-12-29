@@ -818,7 +818,7 @@ class BatchSchemaModifier(object):
                 schema[fn].widget.visible = {"view": "invisible",
                                              "edit": "invisible"}
 
-    def configure_client_field_visibility(self, schema, fieldnames):
+    def get_client(self, schema, fieldnames):
         """All Client Contact fields must be restricted to show only relevant
         Contacts.  During creation the batch can be in some weird states
         and is located inside some odd contexs (TempFolder, PortalFactory),
@@ -852,7 +852,7 @@ class BatchSchemaModifier(object):
                                   "InheritedObjectsUI",
                                   "Remarks"])
 
-        client = self.configure_client_field_visibility(self, schema)
+        client = self.get_client(self, schema)
         if client:
             self.filter_client_lookups(schema, client)
 
