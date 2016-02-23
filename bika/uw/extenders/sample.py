@@ -65,6 +65,32 @@ ExceptionalHazards = ExtTextField(
     )
 )
 
+SampleSite = ExtStringField(
+        'SampleSite',
+        searchable=True,
+        required=0,
+        widget=StringWidget(
+                visible={'edit': 'visible',
+                         'view': 'visible',
+                         'add': 'edit',
+                         'header_table': 'normal',
+                         'sample_registered': {'view': 'invisible', 'edit': 'invisible', 'add': 'edit'},
+                         'to_be_sampled':     {'view': 'invisible', 'edit': 'invisible'},
+                         'sampled':           {'view': 'invisible', 'edit': 'invisible'},
+                         'sample_prep':       {'view': 'invisible', 'edit': 'invisible'},
+                         'to_be_preserved':   {'view': 'invisible', 'edit': 'invisible'},
+                         'sample_received':   {'view': 'invisible', 'edit': 'invisible'},
+                         'attachment_due':    {'view': 'invisible', 'edit': 'invisible'},
+                         'to_be_verified':    {'view': 'invisible', 'edit': 'invisible'},
+                         'verified':          {'view': 'invisible', 'edit': 'invisible'},
+                         'published':         {'view': 'invisible', 'edit': 'invisible'},
+                         'invalid':           {'view': 'invisible', 'edit': 'invisible'},
+                         },
+                label=_("Sample Site"),
+                description=_("This sample's Sample Site."),
+        )
+)
+
 class SampleSchemaExtender(object):
     adapts(ISample)
     implements(IOrderableSchemaExtender)
@@ -74,6 +100,7 @@ class SampleSchemaExtender(object):
         AmountSampled,
         AmountSampledMetric,
         ExceptionalHazards,
+        SampleSite,
     ]
 
     def __init__(self, context):
@@ -83,6 +110,7 @@ class SampleSchemaExtender(object):
         """Return modified order of field schemats.
         """
         fields = schematas['default']
+        fields.insert(fields.index('SampleType') + 1, 'SampleSite')
         fields.insert(fields.index('SamplePoint') + 1, 'ExceptionalHazards')
         fields.insert(fields.index('SamplePoint') + 1, 'ClientSampleComment')
         fields.insert(fields.index('SamplePoint') + 1, 'AmountSampled')
@@ -99,6 +127,12 @@ class SampleSchemaModifier(object):
 
     def __init__(self, context):
         self.context = context
+
+    def fiddle(self, schema):
+        toremove = ['SamplePoint']
+        for field in toremove:
+            schema[field].required = False
+            schema[field].widget.visible = False
 
     def fiddle(self, schema):
         return schema
