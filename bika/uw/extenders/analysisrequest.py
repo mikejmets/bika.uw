@@ -1,13 +1,10 @@
 from archetypes.schemaextender.interfaces import IOrderableSchemaExtender
 from archetypes.schemaextender.interfaces import ISchemaModifier
+from zope.component import adapts
+
 from bika.lims import bikaMessageFactory as _
-from bika.lims.browser.widgets import DateTimeWidget
-from bika.lims.browser.widgets import DecimalWidget as bikaDecimalWidget
 from bika.lims.fields import *
 from bika.lims.interfaces import IAnalysisRequest
-from Products.Archetypes.public import *
-from zope.component import adapts
-from zope.interface import implements
 
 # This is acquired here from batch, and acquired by Sample.
 ClientSampleComment = ExtTextField(
@@ -97,6 +94,23 @@ ApprovedExceptionsToStandardPractice = ExtTextField(
     ),
 )
 
+# This is acquired here from batch, and acquired by Sample.
+SampleSite = ExtStringField(
+        'SampleSite',
+        schemata="AnalysisRequest and Sample Fields",
+        acquire=True,
+        widget=StringWidget(
+                render_own_label=True,
+                label=_('Sample Site'),
+                size=20,
+                description=_("The sample site for an AR's Sample."),
+                visible={'view': 'visible',
+                         'edit': 'visible',
+                         'add': 'edit',
+                         'header_table': 'visible'}
+        )
+)
+
 class AnalysisRequestSchemaExtender(object):
     adapts(IAnalysisRequest)
     implements(IOrderableSchemaExtender)
@@ -108,6 +122,7 @@ class AnalysisRequestSchemaExtender(object):
         ExceptionalHazards,
         NonStandardMethodInstructions,
         ApprovedExceptionsToStandardPractice,
+        SampleSite,
     ]
 
     def __init__(self, context):
@@ -116,12 +131,15 @@ class AnalysisRequestSchemaExtender(object):
     def getOrder(self, schematas):
         """Return modified order of field schemats.
         """
-        fields = schematas['default']
-        fields.insert(fields.index('Sample') + 1, 'ApprovedExceptionsToStandardPractice')
-        fields.insert(fields.index('Sample') + 1, 'NonStandardMethodInstructions')
-        fields.insert(fields.index('Sample') + 1, 'ExceptionalHazards')
-        fields.insert(fields.index('Sample') + 1, 'ClientSampleComment')
-        fields.insert(fields.index('Sample') + 1, 'AmountSampled')
+
+        index = schematas['default'].index('SampleType') + 1
+        schematas['default'].insert(index,
+                                    'ApprovedExceptionsToStandardPractice')
+        schematas['default'].insert(index, 'NonStandardMethodInstructions')
+        schematas['default'].insert(index, 'ExceptionalHazards')
+        schematas['default'].insert(index, 'ClientSampleComment')
+        schematas['default'].insert(index, 'AmountSampled')
+        schematas['default'].insert(index, 'SampleSite')
 
         return schematas
 
@@ -130,6 +148,7 @@ class AnalysisRequestSchemaExtender(object):
 
 
 class AnalysisRequestSchemaModifier(object):
+
     adapts(IAnalysisRequest)
     implements(ISchemaModifier)
 
@@ -137,12 +156,23 @@ class AnalysisRequestSchemaModifier(object):
         self.context = context
 
     def fiddle(self, schema):
-        toremove = ['AdHoc',
-                    'Composite',
-                    'InvoiceExclude',
-                    'Priority']
-        for field in toremove:
+
+        hidden = ['AdHoc',
+                  'Composite',
+                  'InvoiceExclude',
+                  'Priority',
+                  'SamplePoint']
+        for field in hidden:
             schema[field].required = False
             schema[field].widget.visible = False
+        # I want to remove Sample from AR add.
+        # This way secondary samples are not disabled, just the UI is.
+        schema['Sample'].required = False
+        schema['Sample'].widget.visible = {
+            'edit': 'invisible',
+            'view': 'invisible',
+            'add': 'hidden',
+        }
+        schema.moveField('SampleSite', before='SampleType')
 
         return schema

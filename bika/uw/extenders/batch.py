@@ -249,6 +249,17 @@ SampleSource = ExtStringField(
     widget=StringWidget(
         label=_("Sample Source"),
         description=_(""),
+
+SampleSite = ExtStringField(
+        'SampleSite',
+        searchable=True,
+        required=0,
+        widget=StringWidget(
+                label=_("Sample Site"),
+                description=_("A default Sample Site for ARs and Samples in this work order.  The individual objects can override this."),
+                visible={'edit': 'visible',
+                         'view': 'visible',
+                         },
     )
 )
 SampleType = ExtReferenceField(
@@ -686,6 +697,7 @@ class BatchSchemaExtender(object):
         LeadAnalyst,
         ClientProjectName,
         SampleSource,
+        SampleSite,
         SampleType,
         SampleMatrix,
         Profile,
@@ -747,6 +759,7 @@ class BatchSchemaExtender(object):
             "ClientBatchComment",
             "ClientPONumber",
             "ReturnSampleToClient",
+            "SampleSite",
             "SampleSource",
             "SampleType",
             "SampleMatrix",
