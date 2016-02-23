@@ -20,9 +20,6 @@ msgstr "Accepted"
 msgid "Analyses per sample type"
 msgstr "Analyses per sample medium"
 #
-msgid "Analysis results for per sample point and analysis service"
-msgstr "Analysis results for per sample site and analysis service"
-#
 msgid "Approved"
 msgstr "Approved"
 #
@@ -60,27 +57,6 @@ msgstr ""
 "analysis requests are prefixed with sample medium abbreviations and are not "
 "configured in this table - their padding can be set in the specified fields "
 "below"
-#
-msgid ""
-"Enter the Sample Point's latitude in degrees 0-90, minutes 0-59, seconds "
-"0-59 and N/S indicator"
-msgstr ""
-"Enter the Sample Site's latitude in degrees 0-90, minutes 0-59, seconds 0-59 "
-"and N/S indicator"
-#
-msgid ""
-"Enter the Sample Point's longitude in degrees 0-180, minutes 0-59, seconds "
-"0-59 and E/W indicator"
-msgstr ""
-"Enter the Sample Site's longitude in degrees 0-180, minutes 0-59, seconds "
-"0-59 and E/W indicator"
-#
-msgid ""
-"If a sample is taken periodically at this sample point,  enter frequency "
-"here, e.g. weekly"
-msgstr ""
-"If a sample is taken periodically at this sample site,  enter frequency "
-"here, e.g. weekly"
 #
 msgid "If no Title value is entered, the Batch ID will be used."
 msgstr "If no Title value is entered, the Work Order ID will be used."
@@ -143,15 +119,6 @@ msgstr "Released"
 msgid "Requested"
 msgstr "Requested"
 #
-msgid "Results per sample point"
-msgstr "Results per sample site"
-#
-msgid "Sample Point"
-msgstr "Sample Site"
-#
-msgid "Sample Points"
-msgstr "Sample Sites"
-#
 msgid "Sample Type"
 msgstr "Sample Medium"
 #
@@ -166,9 +133,6 @@ msgstr "Sample Medium Specifications (Lab)"
 #
 msgid "Sample Types"
 msgstr "Sample Media"
-#
-msgid "Sample point"
-msgstr "Sample site"
 #
 msgid "Sample type"
 msgstr "Sample medium"
@@ -199,21 +163,6 @@ msgstr "Tested"
 #
 msgid "The lab's own label for the batch"
 msgstr "The categories for the Work Order"
-#
-msgid ""
-"The list of sample points from which this sample type can be collected.  If "
-"no sample points are selected, then all sample points are available."
-msgstr ""
-"The list of sample sites from which this sample medium can be collected.  If "
-"no sample sites are selected, then all sample sites are available."
-#
-msgid ""
-"The list of sample types that can be collected at this sample point.  If no "
-"sample types are selected, then all sample types are available."
-msgstr ""
-"The list of sample media that can be collected at this sample site.  If no "
-"sample media are selected, then all sample media are available."
-#
 msgid "The number of analyses requested per sample type"
 msgstr "The number of analyses requested per sample medium"
 #

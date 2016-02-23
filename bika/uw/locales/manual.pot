@@ -43,9 +43,6 @@ msgstr "Published"
 msgid "Analyses per sample type"
 msgstr "Analyses per sample medium"
 
-msgid "Analysis results for per sample point and analysis service"
-msgstr "Analysis results for per sample site and analysis service"
-
 msgid "Batch"
 msgstr "Work Order"
 
@@ -66,15 +63,6 @@ msgstr "Client Work Order ID"
 
 msgid "Define the prefixes for the unique sequential IDs the system issues for objects. In the 'Padding' field, indicate with how many leading zeros the numbers must be padded. E.g. a prefix of WS for worksheets with padding of 4, will see them numbered from WS-0001 to WS-9999. NB: Note that samples and analysis requests are prefixed with sample type abbreviations and are not configured in this table - their padding can be set in the specified fields below"
 msgstr "Define the prefixes for the unique sequential IDs the system issues for objects. In the 'Padding' field, indicate with how many leading zeros the numbers must be padded. E.g. a prefix of WS for worksheets with padding of 4, will see them numbered from WS-0001 to WS-9999. NB: Note that samples and analysis requests are prefixed with sample medium abbreviations and are not configured in this table - their padding can be set in the specified fields below"
-
-msgid "Enter the Sample Point's latitude in degrees 0-90, minutes 0-59, seconds 0-59 and N/S indicator"
-msgstr "Enter the Sample Site's latitude in degrees 0-90, minutes 0-59, seconds 0-59 and N/S indicator"
-
-msgid "Enter the Sample Point's longitude in degrees 0-180, minutes 0-59, seconds 0-59 and E/W indicator"
-msgstr "Enter the Sample Site's longitude in degrees 0-180, minutes 0-59, seconds 0-59 and E/W indicator"
-
-msgid "If a sample is taken periodically at this sample point,  enter frequency here, e.g. weekly"
-msgstr "If a sample is taken periodically at this sample site,  enter frequency here, e.g. weekly"
 
 msgid "If no Title value is entered, the Batch ID will be used."
 msgstr "If no Title value is entered, the Work Order ID will be used."
@@ -97,15 +85,6 @@ msgstr "Please specify preservations that differ from the analysis service's def
 msgid "ReferenceDefinition represents a Reference Definition or sample type used for quality control testing"
 msgstr "ReferenceDefinition represents a Reference Definition or sample medium used for quality control testing"
 
-msgid "Results per sample point"
-msgstr "Results per sample site"
-
-msgid "Sample Point"
-msgstr "Sample Site"
-
-msgid "Sample Points"
-msgstr "Sample Sites"
-
 msgid "SampleType"
 msgstr "SampleMedium"
 
@@ -124,9 +103,6 @@ msgstr "Sample Medium Specifications (Lab)"
 msgid "Sample Types"
 msgstr "Sample Media"
 
-msgid "Sample point"
-msgstr "Sample site"
-
 msgid "Sample type"
 msgstr "Sample medium"
 
@@ -136,20 +112,11 @@ msgstr "Select a default preservation for this analysis service. If the preserva
 msgid "Select the default container to be used for this analysis service. If the container to be used depends on the sample type and preservation combination, specify the container in the sample type table below"
 msgstr "Select the default container to be used for this analysis service. If the container to be used depends on the sample medium and preservation combination, specify the container in the sample medium table below"
 
-msgid "The list of sample points from which this sample type can be collected.  If no sample points are selected, then all sample points are available."
-msgstr "The list of sample sites from which this sample medium can be collected.  If no sample sites are selected, then all sample sites are available."
-
-msgid "The list of sample types that can be collected at this sample point.  If no sample types are selected, then all sample types are available."
-msgstr "The list of sample media that can be collected at this sample site.  If no sample media are selected, then all sample media are available."
-
 msgid "The number of analyses requested per sample type"
 msgstr "The number of analyses requested per sample medium"
 
 msgid "The number of days before a sample expires and cannot be analysed any more. This setting can be overwritten per individual sample type in the sample types setup"
 msgstr "The number of days before a sample expires and cannot be analysed any more. This setting can be overwritten per individual sample medium in the sample media setup"
-
-msgid "The results of field analyses are captured during sampling at the sample point, e.g. the temperature of a water sample in the river where it is sampled. Lab analyses are done in the laboratory"
-msgstr "The results of field analyses are captured during sampling at the sample site, e.g. the temperature of a water sample in the river where it is sampled. Lab analyses are done in the laboratory"
 
 msgid "To include this spec as the default for a sample type, set the title here to the name of the sample type."
 msgstr "To include this spec as the default for a sample medium, set the title here to the name of the sample medium."
