@@ -30,10 +30,12 @@ AmountSampled = ExtStringField(
     acquire=True,
     widget=StringWidget(
         render_own_label=True,
+        size=20,
         label=_('Amount Sampled'),
         visible={'view': 'visible',
                  'edit': 'visible',
-                 'header_table': 'visible'}
+                 'header_table': 'visible',
+                 'add': 'edit'}
     ),
 )
 
@@ -45,11 +47,13 @@ AmountSampledMetric = ExtStringField(
     acquire=True,
     widget=StringWidget(
         render_own_label=True,
+        size=20,
         label=_('Amount Sampled Metric'),
         visible={'view': 'visible',
                  'edit': 'visible',
-                 'header_table': 'visible'}
-    ),
+                 'header_table': 'visible',
+                 'add': 'edit'}
+),
 )
 
 # This is acquired here from batch, and acquired by Sample.
@@ -148,12 +152,12 @@ class AnalysisRequestSchemaExtender(object):
 
     fields = [
         ClientSampleComment,
-        AmountSampled,
-        AmountSampledMetric,
         ExceptionalHazards,
         NonStandardMethodInstructions,
         ApprovedExceptionsToStandardPractice,
         SampleSite,
+        AmountSampled,
+        AmountSampledMetric,
     ]
 
     def __init__(self, context):
@@ -169,8 +173,11 @@ class AnalysisRequestSchemaExtender(object):
         schematas['default'].insert(index, 'NonStandardMethodInstructions')
         schematas['default'].insert(index, 'ExceptionalHazards')
         schematas['default'].insert(index, 'ClientSampleComment')
-        schematas['default'].insert(index, 'AmountSampled')
         schematas['default'].insert(index, 'SampleSite')
+
+        index = schematas['AnalysisRequest and Sample Fields'].index('BioHazardous')
+        schematas['AnalysisRequest and Sample Fields'].insert(index, 'AmountSampledMetric')
+        schematas['AnalysisRequest and Sample Fields'].insert(index, 'AmountSampled')
 
         return schematas
 
@@ -194,6 +201,10 @@ class AnalysisRequestSchemaModifier(object):
                   'Priority',
                   'SamplePoint',
                   'ClientReference',
+                  'Sub-Group',
+                  'AnalysisSpecification',
+                  'SamplingDeviation',
+                  'SampleCondition',
                   ]
         for field in hidden:
             schema[field].required = False
