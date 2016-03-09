@@ -73,7 +73,7 @@ SampleSite = ExtStringField(
                 visible={'edit': 'visible',
                          'view': 'visible',
                          'add': 'edit',
-                         'header_table': 'normal',
+                         'header_table': 'visible',
                          'sample_registered': {'view': 'invisible', 'edit': 'invisible', 'add': 'edit'},
                          'to_be_sampled':     {'view': 'invisible', 'edit': 'invisible'},
                          'sampled':           {'view': 'invisible', 'edit': 'invisible'},
