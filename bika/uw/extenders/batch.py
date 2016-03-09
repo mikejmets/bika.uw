@@ -59,7 +59,7 @@ class WorkflowDateField(ExtStringField):
         return
 
 
-class RetractionDatesField(ExtStringField):
+class RetractionDatesField(ExtLinesField):
     """Show a list of all retractions on all ARs in this Work Order
     """
 
@@ -87,10 +87,6 @@ class RetractionDatesField(ExtStringField):
                                context=instance)
                         ))
         return result
-
-    def set(self, instance, value):
-        return
-
 
 ##############################################################################
 ##############################################################################
@@ -581,6 +577,7 @@ DateOfRetractions = RetractionDatesField(
                         'Show retraction dates for all ARs inside this Work Order. Each '
                         'line contains AR ID, Analysis ID, username, and a timestamp.'),
                 size=10,
+                mode='r',
         )
 )
 
