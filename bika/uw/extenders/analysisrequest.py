@@ -201,10 +201,11 @@ class AnalysisRequestSchemaModifier(object):
                   'Priority',
                   'SamplePoint',
                   'ClientReference',
-                  'Sub-Group',
-                  'AnalysisSpecification',
+                  'SubGroup',
+                  'Specification',
                   'SamplingDeviation',
                   'SampleCondition',
+                  'PreparationWorkflow',
                   ]
         for field in hidden:
             schema[field].required = False
