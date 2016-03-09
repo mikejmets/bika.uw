@@ -193,6 +193,8 @@ class AnalysisRequestSchemaModifier(object):
                   'InvoiceExclude',
                   'Priority',
                   'SamplePoint',
+                  'ClientReference',
+                  ]
         for field in hidden:
             schema[field].required = False
             schema[field].widget.visible = False
