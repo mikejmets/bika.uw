@@ -1,3 +1,4 @@
+from Products.CMFPlone.interfaces import IPloneSiteRoot
 from archetypes.schemaextender.interfaces import IOrderableSchemaExtender
 from archetypes.schemaextender.interfaces import ISchemaModifier
 from zope.component import adapts
@@ -94,11 +95,41 @@ ApprovedExceptionsToStandardPractice = ExtTextField(
     ),
 )
 
+class SampleSiteField(ExtStringField):
+    """A computed field which sets and gets a value from Sample
+    """
+
+    def get(self, instance):
+        sample = instance.getSample()
+        value = False
+        if sample:
+            value = sample.Schema()['SampleSite'].get(sample)
+        if not value:
+            value = self.getDefault(instance)
+        return value
+
+    def set(self, instance, value):
+        sample = instance.getSample()
+        if sample and value:
+            return sample.Schema()['SampleSite'].set(sample, value)
+
+    def getDefault(self, instance):
+        current = instance
+        while hasattr(current, 'aq_parent'):
+            current = current.aq_parent
+            if IPloneSiteRoot.providedBy(current):
+                break
+            schema = current.Schema()
+            if 'SampleSite' in schema._names:
+                value = schema['SampleSite'].get(current)
+                if value is not None:
+                    return value
+
+
 # This is acquired here from batch, and acquired by Sample.
-SampleSite = ExtStringField(
+SampleSite = SampleSiteField(
         'SampleSite',
         schemata="AnalysisRequest and Sample Fields",
-        acquire=True,
         widget=StringWidget(
                 render_own_label=True,
                 label=_('Sample Site'),
@@ -161,7 +192,7 @@ class AnalysisRequestSchemaModifier(object):
                   'Composite',
                   'InvoiceExclude',
                   'Priority',
-                  'SamplePoint']
+                  'SamplePoint',
         for field in hidden:
             schema[field].required = False
             schema[field].widget.visible = False
