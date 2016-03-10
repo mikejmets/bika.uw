@@ -21,6 +21,14 @@
       description="Bika LIMS UW customisations"
       provides="Products.GenericSetup.interfaces.EXTENSION"/>
 
+  <genericsetup:importStep
+      name="bika.uw.various"
+      title="bika.uw: miscellaneous import steps"
+      description="Various UW import steps that are not handled by GS import/export handlers."
+      handler="bika.uw.setuphandlers.setupVarious">
+    <depends name="content" />
+  </genericsetup:importStep>
+
   <include package=".browser"/>
   <include package=".extenders"/>
   <include package=".workflow"/>
