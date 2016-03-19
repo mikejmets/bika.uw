@@ -133,19 +133,47 @@ class ViewView(BrowserView):
 
         if not show_empty:
             rows = [r for r in rows if r[1]]
+            
         return rows
 
-    def methods(self):
-        """Return list of titles of associated methods.
+
+    def detail_rows(self, show_empty=True):
+        """These are the pairs of fields which are displayed with
+        full-width (80%) field values (one per row).  Remarks, etc.
+
+        This output decides the ordering of fields and the html that's used
+        to display them.
+
+        html is rendered structurally in both labels and values.
         """
         context = self.context
         schema = context.Schema()
-        methods = schema['Methods'].get(context)
-        out = []
-        if methods:
-            for method in methods:
-                out.append(method.Title())
-        return out
+        #
+        BatchLabels = schema['BatchLabels'].get(context)
+        Methods = schema['Methods'].get(context)
+        Methods = [x.Title() for x in Methods]
+        NonStandardMethodInstructions = schema['NonStandardMethodInstructions'].get(context)
+        ApprovedExceptionsToStandardPractice = schema['ApprovedExceptionsToStandardPractice'].get(context)
+        ExceptionalHazards = schema['ExceptionalHazards'].get(context)
+        ClientBatchComment = schema['ClientBatchComment'].get(context)
+        ClientSampleComment = schema['ClientSampleComment'].get(context)
+        Remark = schema['Remarks'].get(context)
+
+        rows = [
+            ('BatchLabels', BatchLabels),
+            ('Methods', Methods),
+            ('NonStandardMethodInstructions', NonStandardMethodInstructions),
+            ('ApprovedExceptionsToStandardPractice', ApprovedExceptionsToStandardPractice),
+            ('ExceptionalHazards', ExceptionalHazards),
+            ('ClientBatchComment', ClientBatchComment),
+            ('ClientSampleComment', ClientSampleComment),
+            ('Remarks', Remarks),
+        ]
+
+        if not show_empty:
+            rows = [r for r in rows if r[1]]
+
+        return rows
 
     def __call__(self):
         return self.template()
