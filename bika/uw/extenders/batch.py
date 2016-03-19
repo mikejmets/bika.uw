@@ -473,15 +473,19 @@ Methods = ExtReferenceField(
         read_permission=permissions.View,
         write_permission=permissions.ModifyPortalContent,
         vocabulary_factory="bika.lims.vocabularies.Methods",
-        widget=MultiSelectionWidget(
-                format='select',
-                size=10,
-                label=_("Methods"),
-                description=_("Methods available for analyses in this batch"),
-                visible={'edit': 'visible',
-                         'view': 'visible',
-                         },
-        ),
+        widget=brw(
+            label=_("Methods"),
+            description=_("Methods available for analyses in this batch"),
+            visible={'edit': 'visible',
+                     'view': 'visible',
+                     },
+            base_query={'inactive_state': 'active'},
+            showOn=True,
+            popup_width='600px',
+            colModel=[{'columnName': 'UID', 'hidden': True},
+                      {'columnName': 'Title', 'width': '100', 'label': _('Title')},
+                      ],
+            ),
 )
 
 ##############################################################################
