@@ -1,0 +1,96 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="bika">
+<body>
+
+<metal:content-core fill-slot="content-title">
+    asdf
+</metal:content-core>
+
+<metal:content-core fill-slot="content-core">
+    <style type="text/css">
+        /*default table*/
+        .table {
+          display: table;
+          width: 100%;
+          margin-top: 1em;
+         }
+        .tr  {
+          display: table-row;
+         }
+        .td {
+          display: table-cell;
+          padding:5px;
+        }
+        .label {
+          font-weight:bold;
+         }
+        .value {
+          font-color:#333333;
+         }
+        .spacer {
+          min-width: 50px;
+        }
+        /*summary table*/
+        .summary .td {
+          border-bottom:1px solid #eee;
+        }
+        .table.summary {
+          border-top:1px solid #eee;
+        }
+    </style>
+    <div class="table summary"
+         tal:define="rows python:view.summary_rows(show_empty=False)">
+        <div class="tr" tal:repeat="i python: range(0, len(rows), 2)">
+            <tal:x tal:define="fst python:rows[i];
+                               snd python:rows[i+1] if len(rows) > i+1 else False">
+                <div class="td label" tal:content="structure python:fst[0]"></div>
+                <div class="td value" tal:content="structure python:fst[1]"></div>
+                <tal:snd tal:condition="python:snd">
+                    <div class="td spacer"></div>
+                    <div class="td label" tal:content="structure python:snd[0]"></div>
+                    <div class="td value" tal:content="structure python:snd[1]"></div>
+                </tal:snd>
+            </tal:x>
+        </div>
+    </div>
+
+    <!-- methods -->
+
+    <div class="table methods"
+         tal:define="methods python:view.methods()"
+         tal:condition="python:methods">
+        <!-- first method -->
+        <div class="tr">
+            <div class="td label" i18n:translate="">Methods</div>
+            <div class="td spacer"></div>
+            <div class="td value" tal:content="python:methods[0]"></div>
+        </div>
+        <tal:tail tal:condition="python:len(methods)>1">
+            <!-- rest of methods -->
+            <div class="tr" tal:repeat="method python:methods[1:]">
+                <div class="td label" i18n:translate="">Methods</div>
+                <div class="td spacer"></div>
+                <div class="td value" tal:content="method"></div>
+            </div>
+        </tal:tail>
+    </div>
+
+    # 'ApprovedExceptionsToStandardPractice',
+
+    <!--
+        # 'ExceptionalHazards',
+        # 'ClientBatchComment',
+        # 'ClientSampleComment',
+        # 'NonStandardMethodInstructions',
+        # 'Remarks'
+    -->
+
+
+</metal:content-core>
+
+</body>
+</html>

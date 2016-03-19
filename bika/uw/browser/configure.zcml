@@ -4,6 +4,7 @@
     xmlns:zcml="http://namespaces.zope.org/zcml"
     i18n_domain="bika">
 
+    <include package=".batch"/>
     <include package=".client"/>
 
     <browser:resourceDirectory

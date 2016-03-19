@@ -1,0 +1,15 @@
+<configure
+        xmlns="http://namespaces.zope.org/zope"
+        xmlns:browser="http://namespaces.zope.org/browser"
+        xmlns:zcml="http://namespaces.zope.org/zcml"
+        i18n_domain="bika">
+
+    <browser:page
+            for="bika.lims.interfaces.IBatch"
+            name="base_view"
+            class="bika.uw.browser.batch.view.ViewView"
+            permission="zope2.View"
+            layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
+</configure>
