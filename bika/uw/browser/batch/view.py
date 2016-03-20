@@ -234,7 +234,7 @@ class ViewView(BrowserView):
         rows = [
             (_('Sample ID'),
              a(sample.absolute_url(), sample.Title()) if sample else ''),
-            (_('Client Sample ID'),
+            (_('Client ID'),
              a(sample.absolute_url(),
                sample.getClientSampleID()) if sample else ''),
             (_('Barcode'), sample.id),
