@@ -339,8 +339,8 @@ Profile = ExtReferenceField(
 
 Container = ExtReferenceField(
     'Container',
-    allowed_types=('ContainerType',),
-    relationship='AnalysisRequestContainerType',
+    allowed_types=('Container',),
+    relationship='AnalysisRequestContainer',
     mode="rw",
     read_permission=permissions.View,
     write_permission=permissions.ModifyPortalContent,

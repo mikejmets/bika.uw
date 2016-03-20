@@ -36,7 +36,7 @@
             {'fieldset': 'Receive and Accept', 'fieldname': 'ReturnSampleToClient', 'after':  'BatchDate'},
             {'fieldset': 'Receive and Accept', 'fieldname': 'SampleType',           'after':  'SamplingDeviation'},
             {'fieldset': 'Receive and Accept', 'fieldname': 'SampleMatrix',         'after':  'SampleType'},
-            {'fieldset': 'Receive and Accept', 'fieldname': 'SamplingDate',         'after':  'DefaultContainerType'},
+            {'fieldset': 'Receive and Accept', 'fieldname': 'SamplingDate',         'after':  'DefaultContainer'},
             {'fieldset': 'Dates',              'fieldname': 'BatchDate',            'before': 'SamplingDate'},
             {'fieldset': 'Dates',              'fieldname': 'DateSampled',          'after':  'SamplingDate'},
           ]">
