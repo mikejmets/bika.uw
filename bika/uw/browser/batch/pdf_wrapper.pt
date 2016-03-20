@@ -5,10 +5,20 @@
       xmlns:i18n="http://xml.zope.org/namespaces/i18n"
       i18n:domain="bika">
 <head>
-
+<style type="text/css">
+    .documentDescription {
+      margin-bottom:1.5em;
+      margin-top:0em;
+    }
+</style>
 </head>
-<body tal:content="structure view/viewhtml"
-      style="font-size:65%;">
+<body style="font-size:65%;">
+
+<h1 tal:content="context/title"> </h1>
+<div class="documentDescription" tal:condition="context/Description">
+    <span tal:replace="context/Description"></span>
+</div>
+<span tal:replace="structure view/viewhtml"> </span>
 
 </body>
 </html>
