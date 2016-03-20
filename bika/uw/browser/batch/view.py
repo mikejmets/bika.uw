@@ -234,7 +234,11 @@ class ViewView(BrowserView):
         rows = [
             (_('Sample ID'),
              a(sample.absolute_url(), sample.Title()) if sample else ''),
-            (_('Analysis Requests'),
+            (_('Client Sample ID'),
+             a(sample.absolute_url(),
+               sample.getClientSampleID()) if sample else ''),
+            (_('Barcode'), sample.id),
+             (_('Analysis Requests'),
              ", ".join([a(ar.absolute_url(), ar.Title())
                         for ar in sample.getAnalysisRequests()])),
             (_('Sample Site'), schema['SampleSite'].get(sample)),
