@@ -1,16 +1,48 @@
+import os
+import tempfile
+
+from Products.CMFCore.utils import getToolByName
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+from zope.interface import implements
 
 from bika.lims.browser import BrowserView
 from bika.lims import bikaMessageFactory as _
+from bika.lims.utils import createPdf
+
+
+def a(url, text):
+    return "<a href='" + url + "'>" + text + "</a>"
 
 
 class ViewView(BrowserView):
     """
     """
     template = ViewPageTemplateFile("view.pt")
+    pdf_wrapper = ViewPageTemplateFile("pdf_wrapper.pt")
+    view_wrapper = ViewPageTemplateFile("view_wrapper.pt")
 
     def __init__(self, context, request):
-        super(ViewView, self).__init__(context, request)
+        BrowserView.__init__(self, context, request)
+        self.context = context
+        self.request = request
+
+    def __call__(self):
+        self.viewhtml = self.template()
+        if self.request.form.get('pdf', False):
+            pdf_data = createPdf(self.pdf_wrapper(), css=self.css_local_fn())
+            setheader = self.request.RESPONSE.setHeader
+            setheader('Content-Length', len(pdf_data))
+            setheader('Content-Type', 'application/pdf')
+            setheader('Content-Disposition', 'inline; filename=\"%s.pdf\"' %
+                      self.context.Title())
+            self.request.RESPONSE.write(pdf_data)
+        else:
+            return self.view_wrapper()
+
+    def css_local_fn(self):
+        from pkg_resources import resource_filename
+        cssfn = resource_filename("bika.uw", "browser/css/batch-pdf.css")
+        return cssfn
 
     def summary_rows(self, show_empty=True):
         """These are the pairs of fields which will be rendered in the
@@ -35,34 +67,38 @@ class ViewView(BrowserView):
         biohazardous = schema['BioHazardous'].get(context)
         qcbp = schema['QCBlanksProvided'].get(context)
         sqcm = schema['SampleAndQCLotMatch'].get(context)
-        samplecondition = schema['SampleCondition'].get(context)
+        scond = schema['SampleCondition'].get(context)
         datesampled = self.ulocalized_time(schema['DateSampled'].get(context))
+        msdsorsds = schema['MSDSorSDS'].get(context)
+
         rows = [
-            ('Client', client.Title() if client else ''),
-            ('ClientProjectName', schema['ClientProjectName'].get(context)),
-            ('Contact', contact.Title() if contact else ''),
-            ('ClientPONumber', schema['ClientPONumber'].get(context)),
-            ('LeadAnalyst', schema['LeadAnalyst'].get(context)),
-            ('ReturnSampleToClient', _('Yes') if rstc else _('No')),
-            ('ClientBatchID', schema['ClientBatchID'].get(context)),
-            ('Profile', profile.Title() if profile else ''),
-            ('ActivitySampled', schema['ActivitySampled'].get(context)),
-            ('DateSampled', datesampled),
-            ('SampleSource', schema['SampleSource'].get(context)),
-            ('SampleSite', schema['SampleSite'].get(context)),
-            ('SampleType', sampletype.Title() if sampletype else ''),
-            ('MediaLotNr', schema['MediaLotNr'].get(context)),
-            ('SampleMatrix', samplematrix.Title() if samplematrix else ''),
-            ('SampleTemperature', schema['SampleTemperature'].get(context)),
-            ('SampleCondition',
-             samplecondition.Title() if samplecondition else ''),
-            ('AmountSampled', sampledwithmetric),
+            (_('Batch'), context.getId()),
+            (_('Client'), client.Title() if client else ''),
+            (
+                _('Client Project Name'),
+                schema['ClientProjectName'].get(context)),
+            (_('Contact'), contact.Title() if contact else ''),
+            (_('Client PO Number'), schema['ClientPONumber'].get(context)),
+            (_('Lead Analyst'), schema['LeadAnalyst'].get(context)),
+            (_('Return Sample To Client'), _('Yes') if rstc else _('No')),
+            (_('Client BatchID'), schema['ClientBatchID'].get(context)),
+            (_('Profile'), profile.Title() if profile else ''),
+            (_('Activity Sampled'), schema['ActivitySampled'].get(context)),
+            (_('Date Sampled'), datesampled),
+            (_('Sample Source'), schema['SampleSource'].get(context)),
+            (_('Sample Site'), schema['SampleSite'].get(context)),
+            (_('Sample Type'), sampletype.Title() if sampletype else ''),
+            (_('Media Lot Nr'), schema['MediaLotNr'].get(context)),
+            (_('Sample Matrix'), samplematrix.Title() if samplematrix else ''),
+            (_('Sample Temperature'), schema['SampleTemperature'].get(context)),
+            (_('Sample Condition'), scond.Title() if scond else ''),
+            (_('Amount Sampled'), sampledwithmetric),
+            (_('Bio Hazardous'), _('Yes') if biohazardous else _('No')),
+            (_('QC Blanks Provided'), _('Yes') if qcbp else _('No')),
+            (_('Sample And QC Lot Match'), _('Yes') if sqcm else _('No')),
+            (_('MSDS or SDS'), _('Yes') if msdsorsds else _('No'))
             # ('StorageLocation', schema['StorageLocation'].get(context)),
             # ('Container', schema['Container'].get(context))),
-            ('BioHazardous', _('Yes') if biohazardous else _('No')),
-            ('QCBlanksProvided', _('Yes') if qcbp else _('No')),
-            ('SampleAndQCLotMatch', _('Yes') if sqcm else _('No')),
-            ('MSDSorSDS', schema['MSDSorSDS'].get(context))
         ]
 
         DateApproved = schema['DateApproved'].get(context)
@@ -93,9 +129,6 @@ class ViewView(BrowserView):
         DateCancelled = self.ulocalized_time(DateCancelled, long_format=True) \
             if DateCancelled else ''
         DateOfRetractions = schema['DateOfRetractions'].get(context)
-        DateOfRetractions = self.ulocalized_time(DateOfRetractions,
-                                                 long_format=True) \
-            if DateOfRetractions else ''
         DateQADue = schema['DateQADue'].get(context)
         DateQADue = self.ulocalized_time(DateQADue, long_format=True) \
             if DateQADue else ''
@@ -104,38 +137,36 @@ class ViewView(BrowserView):
                                                   long_format=True) \
             if DatePublicationDue else ''
         rows.extend([
-            ('DateApproved', self.ulocalized_time(DateApproved)
-                                                  if DateApproved else ''),
-            ('DateReceived', self.ulocalized_time(DateReceived)
-                                                  if DateReceived else ''),
-            ('DateAccepted', self.ulocalized_time(DateAccepted)
-                                                  if DateAccepted else ''),
-            ('DateReleased', self.ulocalized_time(DateReleased)
-                                                  if DateReleased else ''),
-            ('DatePrepared', self.ulocalized_time(DatePrepared)
-                                                  if DatePrepared else ''),
-            ('DateTested', self.ulocalized_time(DateTested)
-                                                if DateTested else ''),
-            ('DatePassedQA', self.ulocalized_time(DatePassedQA)
-                                                  if DatePassedQA else ''),
-            ('DatePublished', self.ulocalized_time(DatePublished)
-                                                   if DatePublished else ''),
-            ('DateCancelled', self.ulocalized_time(DateCancelled)
-                                                   if DateCancelled else ''),
-            ('DateOfRetractions', DateOfRetractions),
-            ('DateQADue', self.ulocalized_time(DateQADue if DateQADue else '')),
-            ('DatePublicationDue', self.ulocalized_time(DatePublicationDue)
-                                             if DatePublicationDue else '')
+            (_('Date Approved'),
+             self.ulocalized_time(DateApproved) if DateApproved else ''),
+            (_('Date Received'),
+             self.ulocalized_time(DateReceived) if DateReceived else ''),
+            (_('Date Accepted'),
+             self.ulocalized_time(DateAccepted) if DateAccepted else ''),
+            (_('Date Released'),
+             self.ulocalized_time(DateReleased) if DateReleased else ''),
+            (_('Date Prepared'),
+             self.ulocalized_time(DatePrepared) if DatePrepared else ''),
+            (_('Date Tested'),
+             self.ulocalized_time(DateTested) if DateTested else ''),
+            (_('Date Passed QA'),
+             self.ulocalized_time(DatePassedQA) if DatePassedQA else ''),
+            (_('Date Published'),
+             self.ulocalized_time(DatePublished) if DatePublished else ''),
+            (_('Date Cancelled'),
+             self.ulocalized_time(DateCancelled) if DateCancelled else ''),
+            (_('Date Of Retractions'), DateOfRetractions),
+            (_('Date QA Due'),
+             self.ulocalized_time(DateQADue if DateQADue else '')),
+            (_('Date Publication Due'),
+             self.ulocalized_time(
+                 DatePublicationDue) if DatePublicationDue else '')
         ])
-
-        batchlabels = ", ".join(schema['BatchLabels'].get(context))
-        rows.append(('BatchLabels', batchlabels))
 
         if not show_empty:
             rows = [r for r in rows if r[1]]
-            
-        return rows
 
+        return rows
 
     def detail_rows(self, show_empty=True):
         """These are the pairs of fields which are displayed with
@@ -148,26 +179,37 @@ class ViewView(BrowserView):
         """
         context = self.context
         schema = context.Schema()
+        uc = getToolByName(context, "uid_catalog")
         #
-        BatchLabels = schema['BatchLabels'].get(context)
-        Methods = schema['Methods'].get(context)
-        Methods = [x.Title() for x in Methods]
-        NonStandardMethodInstructions = schema['NonStandardMethodInstructions'].get(context)
-        ApprovedExceptionsToStandardPractice = schema['ApprovedExceptionsToStandardPractice'].get(context)
+        batchlabels = []
+        for bl in schema['BatchLabels'].get(context):
+            if isinstance(bl, basestring):
+                batchlabels.append(uc(UID=bl)[0].Title)
+            elif hasattr(bl, 'portal_type') and bl.portal_type == 'BatchLabel':
+                batchlabels.append(bl.Title())
+        BatchLabels = "<br/>".join(batchlabels)
+        Methods = "<br/>".join(
+            [x.Title() for x in schema['Methods'].get(context)])
+        NonStandardMethodInstructions = schema[
+            'NonStandardMethodInstructions'].get(context)
+        ApprovedExceptionsToStandardPractice = schema[
+            'ApprovedExceptionsToStandardPractice'].get(context)
         ExceptionalHazards = schema['ExceptionalHazards'].get(context)
         ClientBatchComment = schema['ClientBatchComment'].get(context)
         ClientSampleComment = schema['ClientSampleComment'].get(context)
-        Remark = schema['Remarks'].get(context)
+        Remarks = schema['Remarks'].get(context)
 
         rows = [
-            ('BatchLabels', BatchLabels),
-            ('Methods', Methods),
-            ('NonStandardMethodInstructions', NonStandardMethodInstructions),
-            ('ApprovedExceptionsToStandardPractice', ApprovedExceptionsToStandardPractice),
-            ('ExceptionalHazards', ExceptionalHazards),
-            ('ClientBatchComment', ClientBatchComment),
-            ('ClientSampleComment', ClientSampleComment),
-            ('Remarks', Remarks),
+            (_('Batch Labels'), BatchLabels),
+            (_('Methods'), Methods),
+            (_('Non Standard Method Instructions'),
+             NonStandardMethodInstructions),
+            (_('Approved Exceptions To Standard Practice'),
+             ApprovedExceptionsToStandardPractice),
+            (_('Exceptional Hazards'), ExceptionalHazards),
+            (_('Client Batch Comment'), ClientBatchComment),
+            (_('Client Sample Comment'), ClientSampleComment),
+            (_('Remarks'), Remarks),
         ]
 
         if not show_empty:
@@ -175,5 +217,45 @@ class ViewView(BrowserView):
 
         return rows
 
-    def __call__(self):
-        return self.template()
+    def sample_pairs(self, sample):
+        """Return the list of pairs for a single Sample.
+        This output decides the ordering of fields and the html that's used
+        to display them.  html is rendered structurally in values.
+        """
+        schema = sample.Schema()
+        workflow = getToolByName(sample, 'portal_workflow')
+        #
+        sampletype = schema['SampleType'].get(sample)
+        samplematrix = schema['SampleMatrix'].get(sample)
+        biohazardous = schema['BioHazardous'].get(sample)
+        datesampled = self.ulocalized_time(schema['DateSampled'].get(sample))
+        sampledwithmetric = schema['AmountSampled'].get(sample) + ' ' + \
+                            schema['AmountSampledMetric'].get(sample)
+        rows = [
+            (_('Sample ID'),
+             a(sample.absolute_url(), sample.Title()) if sample else ''),
+            (_('Analysis Requests'),
+             ", ".join([a(ar.absolute_url(), ar.Title())
+                        for ar in sample.getAnalysisRequests()])),
+            (_('Sample Site'), schema['SampleSite'].get(sample)),
+            (_('Sample Type'), sampletype.Title() if sampletype else ''),
+            (_('Sample Matrix'), samplematrix.Title() if samplematrix else ''),
+            (_('Amount Sampled'), sampledwithmetric),
+            (_('Bio Hazardous'), _('Yes') if biohazardous else _('No')),
+        ]
+        return rows
+
+    def sample_rows(self):
+        """Return one list of key,value pairs for all samples referenced by
+        this batch.
+        """
+        context = self.context
+        schema = context.Schema()
+        #  getAnalysisRequests uses backreferences on AnalysisRequestBatch:
+        # so ARs are actual objects, but there could be other criteria.
+        ars = context.getAnalysisRequests()
+        rows = [self.sample_pairs(sample) for sample in
+                sorted(list(set([ar.getSample() for ar in ars])),
+                       cmp=lambda x, y: cmp(x.Title(), y.Title()))
+                ]
+        return rows

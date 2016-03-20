@@ -21,5 +21,17 @@
         <permission value="View"/>
     </action>
 
+    <action title="PDF"
+            action_id="pdf"
+            category="document_actions"
+            condition_expr=""
+            icon_expr="string:${object_url}/++resource++bika.lims.images/print_32.png"
+            link_target=""
+            url_expr="string:${object_url}/?pdf=1"
+            i18n:attributes="title"
+            visible="True">
+       <permission value="View"/>
+    </action>
+
 </object>
 

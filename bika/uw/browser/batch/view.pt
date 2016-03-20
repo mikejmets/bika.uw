@@ -1,16 +1,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:tal="http://xml.zope.org/namespaces/tal"
-      xmlns:metal="http://xml.zope.org/namespaces/metal"
       xmlns:i18n="http://xml.zope.org/namespaces/i18n"
-      metal:use-macro="here/main_template/macros/master"
       i18n:domain="bika">
-<body>
 
-<metal:content-core fill-slot="content-title">
-    asdf
-</metal:content-core>
-
-<metal:content-core fill-slot="content-core">
+<head>
     <style type="text/css">
         /*default table*/
         .table {
@@ -21,6 +14,10 @@
         .tr  {
           display: table-row;
          }
+        .th {
+          display: table-cell;
+          padding:5px;
+        }
         .td {
           display: table-cell;
           padding:5px;
@@ -29,60 +26,99 @@
           font-weight:bold;
          }
         .value {
-          font-color:#333333;
+          color:#333;
          }
         .spacer {
           min-width: 50px;
         }
         /*summary table*/
         .table.summary {
-          border-top:1px solid #eee;
+          border-top:1px solid #ddd;
         }
         .summary .td {
-          border-bottom:1px solid #eee;
+          border-bottom:1px solid #ddd;
         }
     </style>
-    <div class="table summary"
-         tal:define="rows python:view.summary_rows(show_empty=False)">
-        <div class="tr" tal:repeat="i python: range(0, len(rows), 2)">
-            <tal:x tal:define="fst python:rows[i];
-                               snd python:rows[i+1] if len(rows) > i+1 else False">
-                <div class="td label" tal:content="structure python:fst[0]"></div>
-                <div class="td value" tal:content="structure python:fst[1]"></div>
-                <tal:snd tal:condition="python:snd">
-                    <div class="td spacer"></div>
-                    <div class="td label" tal:content="structure python:snd[0]"></div>
-                    <div class="td value" tal:content="structure python:snd[1]"></div>
-                </tal:snd>
-            </tal:x>
-        </div>
-    </div>
+</head>
+<body>
 
-    <style type="text/css">
-        /*methods table*/
+<div class="table summary"
+     tal:define="rows python:view.summary_rows(show_empty=False)">
+    <div class="tr" tal:repeat="i python: range(0, len(rows), 2)">
+        <tal:x tal:define="fst python:rows[i];
+                               snd python:rows[i+1] if len(rows) > i+1 else False">
+            <div class="td label" tal:content="structure python:fst[0]"></div>
+            <div class="td value" tal:content="structure python:fst[1]"></div>
+            <tal:snd tal:condition="python:snd">
+                <div class="td spacer"></div>
+                <div class="td label" tal:content="structure python:snd[0]"></div>
+                <div class="td value" tal:content="structure python:snd[1]"></div>
+            </tal:snd>
+            <tal:empty tal:condition="python:not snd">
+                <div class="td spacer"></div>
+                <div class="td label"></div>
+                <div class="td value"></div>
+            </tal:empty>
+        </tal:x>
+    </div>
+</div>
+
+<style type="text/css">
+        /*details table*/
         .details .td {
-          border-bottom:1px solid #eee;
+          border-bottom:1px solid #ddd;
         }
         .details .td.label {
           width:20%;
         }
         .details .td.value {
           width:80%;
+          padding:10px;
         }
-    </style>
-    <div class="table details"
-         tal:define="rows python:view.detail_rows(show_empty=False)">
-        <div class="tr" tal:repeat="row rows">
-            <div class="td label" tal:content="structure python:row[0]"></div>
-            <div class="td spacer"></div>
-            <div class="td value" tal:content="structure python:row[1]"></div>
-        </div>
+</style>
+<div class="table details"
+     tal:define="detail_rows python:view.detail_rows(show_empty=False)"
+     tal:condition="detail_rows">
+    <div class="tr" tal:repeat="row detail_rows">
+        <div class="td label" tal:content="structure python:row[0]"></div>
+        <div class="td spacer"></div>
+        <div class="td value" tal:content="structure python:row[1]"></div>
     </div>
+</div>
 
-    -->
+<style type="text/css">
+        /*samples table*/
+        .samples .td {
+          border-bottom:1px solid #ddd;
+        }
+        .samples .th {
+          font-weight:bold;
+          border-top:1px solid #aaa;
+          border-bottom:1px solid #aaa;
+          background-color: #eeeeee;
+          width:auto;
+          padding:10px;
+        }
+        .samples .td.value {
+          width:auto;
+          padding:10px;
+        }
+</style>
+<div class="table samples"
+     tal:define="sample_rows python:view.sample_rows()"
+     tal:condition="sample_rows">
+    <div class="tr">
+        <tal:x tal:repeat="n python:sample_rows[0]">
+            <div class="th" tal:content="python:n[0]"></div>
+        </tal:x>
+    </div>
+    <div class="tr" tal:repeat="row sample_rows">
+        <tal:x tal:repeat="n python:row">
+            <div class="td value" tal:content="structure python:n[1]"></div>
+        </tal:x>
+    </div>
+</div>
 
-
-</metal:content-core>
 
 </body>
 </html>

@@ -1,0 +1,26 @@
+@page {
+   size: A4;
+   margin: .7cm .7cm;
+}
+html, body {
+    margin: 0;
+    padding: 0;
+}
+body {
+    width: 197mm;
+    padding-right:20px;
+    margin: 0;
+    background-color:#fff;
+}
+.table{
+    margin:5px !important;
+}
+.td, .th{
+    padding:5px !important;
+}
+.samples {
+    font-size:90%;
+}
+h1 { -weasy-bookmark-level: none }
+h2 { -weasy-bookmark-level: none }
+h3 { -weasy-bookmark-level: none }
