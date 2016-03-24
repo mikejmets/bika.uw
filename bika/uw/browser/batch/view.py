@@ -197,7 +197,10 @@ class ViewView(BrowserView):
         ExceptionalHazards = schema['ExceptionalHazards'].get(context)
         ClientBatchComment = schema['ClientBatchComment'].get(context)
         ClientSampleComment = schema['ClientSampleComment'].get(context)
-        Remarks = schema['Remarks'].get(context)
+        remark_items = [r for r in schema['Remarks'].get(context).split('===')
+                        if r]
+        Remarks = ''.join(['=== %s<br/>'%(r) for r in remark_items])
+        schema['Remarks'].get(context).split()
 
         rows = [
             (_('Batch Labels'), BatchLabels),
