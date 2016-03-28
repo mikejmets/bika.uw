@@ -6,7 +6,7 @@ from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from zope.interface import implements
 
 from bika.lims.browser import BrowserView
-from bika.lims import bikaMessageFactory as _
+from bika.lims import bikaMessageFactory as _, t
 from bika.lims.utils import createPdf
 
 
@@ -29,7 +29,7 @@ class ViewView(BrowserView):
     def __call__(self):
         self.viewhtml = self.template()
         if self.request.form.get('pdf', False):
-            pdf_data = createPdf(self.pdf_wrapper(), css=self.css_local_fn())
+            pdf_data = createPdf(t(self.pdf_wrapper()), css=self.css_local_fn())
             setheader = self.request.RESPONSE.setHeader
             setheader('Content-Length', len(pdf_data))
             setheader('Content-Type', 'application/pdf')
