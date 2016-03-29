@@ -3,6 +3,7 @@ import tempfile
 
 from Products.CMFCore.utils import getToolByName
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+from openpyxl import load_workbook
 from zope.interface import implements
 
 from bika.lims.browser import BrowserView
@@ -19,6 +20,7 @@ class ViewView(BrowserView):
     """
     template = ViewPageTemplateFile("view.pt")
     pdf_wrapper = ViewPageTemplateFile("pdf_wrapper.pt")
+    xlsx_upload_form = ViewPageTemplateFile("xlsx_upload_form.pt")
     view_wrapper = ViewPageTemplateFile("view_wrapper.pt")
 
     def __init__(self, context, request):
@@ -29,15 +31,34 @@ class ViewView(BrowserView):
     def __call__(self):
         self.viewhtml = self.template()
         if self.request.form.get('pdf', False):
-            pdf_data = createPdf(t(self.pdf_wrapper()), css=self.css_local_fn())
-            setheader = self.request.RESPONSE.setHeader
-            setheader('Content-Length', len(pdf_data))
-            setheader('Content-Type', 'application/pdf')
-            setheader('Content-Disposition', 'inline; filename=\"%s.pdf\"' %
-                      self.context.Title())
-            self.request.RESPONSE.write(pdf_data)
+            self.pdf()
+        elif self.request.form.get('xlsx_upload_submit', False):
+            # xlsx_upload_submit must be checked before xlsx_upload
+            # since xlsx_upload is in the GET request.
+            return self.xlsx_upload()
+        elif self.request.form.get('xlsx_upload', False):
+            return self.xlsx_upload_form()
         else:
             return self.view_wrapper()
+
+    def pdf(self):
+        pdf_data = createPdf(t(self.pdf_wrapper()), css=self.css_local_fn())
+        setheader = self.request.RESPONSE.setHeader
+        setheader('Content-Length', len(pdf_data))
+        setheader('Content-Type', 'application/pdf')
+        setheader('Content-Disposition', 'inline; filename=\"%s.pdf\"' %
+                  self.context.Title())
+        self.request.RESPONSE.write(pdf_data)
+
+    def xlsx_upload(self):
+        xlsx_file = self.request.form.get('xlsx_file', False)
+        if not xlsx_file:
+            message = _("No file selected")
+            self.context.plone_utils.addPortalMessage(message, 'error')
+            return self.view_wrapper()
+        workbook = load_workbook(filename=xlsx_file)
+        
+
 
     def css_local_fn(self):
         from pkg_resources import resource_filename

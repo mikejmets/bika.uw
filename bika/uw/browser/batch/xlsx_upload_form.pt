@@ -1,0 +1,34 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:tal="http://xml.zope.org/namespaces/tal"
+    xmlns:metal="http://xml.zope.org/namespaces/metal"
+    xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+    metal:use-macro="here/main_template/macros/master"
+    i18n:domain="bika">
+<body>
+
+<metal:content-title fill-slot="content-title">
+    <h1 class="documentFirstHeading">
+        Import XLSX
+    </h1>
+</metal:content-title>
+
+<metal:content-description fill-slot="content-description">
+    <div class="documentDescription">
+        Submit a valid xlsx file to populate records in this Work Order
+    </div>
+</metal:content-description>
+
+<metal:content-core fill-slot="content-core">
+    <form name="import" class="enableFormTabbing" method="POST" enctype="multipart/form-data">
+        <div style="margin-bottom:30px;">
+            <div style="float:left;width:47%;">
+                <input type="file" name="xlsx_file"/>
+                <input name="xlsx_upload_submit" type="submit" value="Submit"/>
+                <p></p>
+            </div>
+        </div>
+    </form>
+</metal:content-core>
+
+</body>
+</html>

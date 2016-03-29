@@ -21,6 +21,18 @@
         <permission value="View"/>
     </action>
 
+    <action title="Upload Spreadsheet (XLSX)"
+            action_id="xlsx_upload"
+            category="document_actions"
+            condition_expr=""
+            icon_expr="string:${object_url}/++resource++bika.uw.images/xlsx_32.png"
+            link_target=""
+            url_expr="string:${object_url}/?xlsx_upload=1"
+            i18n:attributes="title"
+            visible="True">
+       <permission value="View"/>
+    </action>
+
     <action title="PDF"
             action_id="pdf"
             category="document_actions"
