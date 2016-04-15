@@ -1,3 +1,4 @@
+from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.CMFPlone.interfaces import IPloneSiteRoot
 from archetypes.schemaextender.interfaces import IOrderableSchemaExtender
 from archetypes.schemaextender.interfaces import ISchemaModifier
@@ -38,7 +39,12 @@ class WorkflowDateField(ExtStringField):
             'DateCancelled': 'cancelled',
         }
         workflow = getToolByName(instance, 'portal_workflow')
-        review_history = list(workflow.getInfoFor(instance, 'review_history'))
+        try:
+            review_history = list(workflow.getInfoFor(instance, 'review_history'))
+        except WorkflowException:
+            # Maybe there is no review_history at some states.  If it doesn't
+            # exist, we can't care about it.
+            review_history = []
         # invert the list, so we always see the most recent matching event
         review_history.reverse()
         try:
