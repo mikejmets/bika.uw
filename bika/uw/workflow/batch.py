@@ -13,7 +13,7 @@ def batch_receive(instance):
         try:
             workflow.doActionFor(ar, 'receive')
         except WorkflowException:
-            logger.info("batch_receive: could not execute receive on " % ar.id)
+            logger.info("batch_receive: could not execute receive on %s" % ar.id)
 
 
 def batch_test(instance):
