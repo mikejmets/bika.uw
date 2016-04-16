@@ -2,13 +2,13 @@ msgid ""
 msgstr ""
 
 msgid "date_format_long"
-msgstr "${Y}-${m}-${d} ${I}:${M} ${p}"
+msgstr "${d}/${m}/${Y} ${I}:${M} ${p}"
 
 msgid "date_format_short"
-msgstr "${Y}-${m}-${d}"
+msgstr "${d}/${m}/${Y}"
 
 msgid "date_format_short_datepicker"
-msgstr "yy-mm-dd"
+msgstr "dd/mm/yy"
 
 msgid "time_format"
 msgstr "${I}:${M} ${p}"
