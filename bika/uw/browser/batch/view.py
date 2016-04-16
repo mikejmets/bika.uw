@@ -83,8 +83,9 @@ class ViewView(BrowserView):
         profile = schema['Profile'].get(context)
         sampletype = schema['SampleType'].get(context)
         samplematrix = schema['SampleMatrix'].get(context)
-        sampledwithmetric = schema['AmountSampled'].get(context) + ' ' + \
-                            schema['AmountSampledMetric'].get(context)
+        sampledwithmetric = '%s %s' % (
+            schema['AmountSampled'].get(self.context),
+            schema['AmountSampledMetric'].get(self.context))
         biohazardous = schema['BioHazardous'].get(context)
         qcbp = schema['QCBlanksProvided'].get(context)
         sqcm = schema['SampleAndQCLotMatch'].get(context)
@@ -158,30 +159,18 @@ class ViewView(BrowserView):
                                                   long_format=True) \
             if DatePublicationDue else ''
         rows.extend([
-            (_('Date Approved'),
-             self.ulocalized_time(DateApproved) if DateApproved else ''),
-            (_('Date Received'),
-             self.ulocalized_time(DateReceived) if DateReceived else ''),
-            (_('Date Accepted'),
-             self.ulocalized_time(DateAccepted) if DateAccepted else ''),
-            (_('Date Released'),
-             self.ulocalized_time(DateReleased) if DateReleased else ''),
-            (_('Date Prepared'),
-             self.ulocalized_time(DatePrepared) if DatePrepared else ''),
-            (_('Date Tested'),
-             self.ulocalized_time(DateTested) if DateTested else ''),
-            (_('Date Passed QA'),
-             self.ulocalized_time(DatePassedQA) if DatePassedQA else ''),
-            (_('Date Published'),
-             self.ulocalized_time(DatePublished) if DatePublished else ''),
-            (_('Date Cancelled'),
-             self.ulocalized_time(DateCancelled) if DateCancelled else ''),
+            (_('Date Approved'), DateApproved),
+            (_('Date Received'), DateReceived),
+            (_('Date Accepted'), DateAccepted),
+            (_('Date Released'), DateReleased),
+            (_('Date Prepared'), DatePrepared),
+            (_('Date Tested'), DateTested),
+            (_('Date Passed QA'), DatePassedQA),
+            (_('Date Published'), DatePublished),
+            (_('Date Cancelled'), DateCancelled),
             (_('Date Of Retractions'), DateOfRetractions),
-            (_('Date QA Due'),
-             self.ulocalized_time(DateQADue if DateQADue else '')),
-            (_('Date Publication Due'),
-             self.ulocalized_time(
-                 DatePublicationDue) if DatePublicationDue else '')
+            (_('Date QA Due'), DateQADue),
+            (_('Date Publication Due'), DatePublicationDue),
         ])
 
         if not show_empty:
@@ -282,8 +271,47 @@ class ViewView(BrowserView):
         #  getAnalysisRequests uses backreferences on AnalysisRequestBatch:
         # so ARs are actual objects, but there could be other criteria.
         ars = context.getAnalysisRequests()
-        rows = [self.sample_pairs(sample) for sample in
-                sorted(list(set([ar.getSample() for ar in ars])),
-                       cmp=lambda x, y: cmp(x.Title(), y.Title()))
-                ]
-        return rows
+        pairs = [self.sample_pairs(sample) for sample in
+                 # May be duplicate Samples (multiple ARs):
+                 sorted(list(set([ar.getSample() for ar in ars])),
+                        cmp=lambda x, y: cmp(x.Title(), y.Title()))
+                 ]
+        return pairs
+
+    def analysis_pairs(self, analysis):
+        """Return the list of pairs for a single Sample.
+        This output decides the ordering of fields and the html that's used
+        to display them.  html is rendered structurally in values.
+        """
+        ar = analysis.aq_parent
+        ar_schema = ar.Schema()
+        sample = ar.getSample()
+        sample_schema = sample.Schema()
+        #
+        workflow = getToolByName(sample, 'portal_workflow')
+        #
+        sampledwithmetric = '%s %s' % (
+            sample_schema['AmountSampled'].get(self.context),
+            sample_schema['AmountSampledMetric'].get(self.context))
+        #
+        pairs = [
+            (_('Sample ID'),
+             sample.Title() if sample else ''),
+            (_('Client Sample ID'),
+             a(sample.absolute_url(), sample.getClientSampleID()) if sample else ''),
+            (_('Analysis'),
+             analysis.Title()),
+        ]
+        return pairs
+
+    def analysis_rows(self):
+        """Return one list of key,value pairs for all analyses! referenced
+        by this batch.
+        """
+        context = self.context
+        ars = context.getAnalysisRequests()
+        analyses = []
+        for ar in ars:
+            analyses.extend(ar.getAnalyses(cancellation_state='active',
+                                           full_objects=True))
+        return [self.analysis_pairs(analysis) for analysis in analyses]

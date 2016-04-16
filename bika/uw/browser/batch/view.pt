@@ -130,6 +130,34 @@
     </div>
 </div>
 
+<style type="text/css">
+        /*analysis table*/
+        /*summary table*/
+        .table.analysis {
+          border-top:1px solid #ddd;
+        }
+        .analysis .td {
+          border-bottom:1px solid #ddd;
+        }
+</style>
+<div class="table analysis"
+     tal:define="rows python:view.analysis_rows()">
+    <div class="tr" tal:repeat="i python: range(0, len(rows), 2)">
+        <tal:x tal:define="fst python:rows[i]; snd python:rows[i+1] if len(rows) > i+1 else False">
+            <div class="td label" tal:content="structure python:fst[0][1]"></div>
+            <div class="td value" tal:content="structure python:fst[2][1]"></div>
+            <div class="td spacer"></div>
+            <div class="td label" tal:condition="python:snd" tal:content="structure python:snd[0][1]"></div>
+            <div class="td value" tal:condition="python:snd" tal:content="structure python:snd[2][1]"></div>
+            <tal:empty tal:condition="python:not snd">
+                <div class="td label"></div>
+                <div class="td value"></div>
+            </tal:empty>
+            <div class="td spacer"></div>
+        </tal:x>
+    </div>
+</div>
+
 <script type="text/javascript">
     // Barcode generator
     $('.barcode').each(function() {
@@ -143,7 +171,6 @@
 
 </body>
 </html>
-
 
 <!--
                 <div tal:attributes="id python:'barcode_%s'%(n[1])"></div>
