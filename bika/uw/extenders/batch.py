@@ -905,7 +905,8 @@ class BatchSchemaModifier(object):
         self.hide_fields(schema, ["Client",
                                   "BatchDate",
                                   "InheritedObjectsUI",
-                                  "Remarks"])
+                                  "Remarks",
+                                  "title"])
 
         client = self.get_client(self, schema)
         if client:
