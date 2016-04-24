@@ -82,14 +82,11 @@ class ViewView(BrowserView):
         msdsorsds = schema['MSDSorSDS'].get(context)
 
         au = schema['LeadAnalyst'].get(context)
-        if au:
-            proxies = self.portal_catalog(getUsername=au)
-            if proxies:
-                analyst_name = proxies[0].getObject().Title()
-            else:
-                analyst_name = au
-        else:
-            analyst_name = au
+        for proxy in self.bika_setup_catalog(portal_type='LabContact'):
+            lc = proxy.getObject()
+            if lc.getUsername() == au:
+                au = lc.getFullname()
+                break
 
         rows = [
             (_('Batch'), context.getId()),
@@ -98,7 +95,7 @@ class ViewView(BrowserView):
              schema['ClientProjectName'].get(context)),
             (_('Contact'), contact.Title() if contact else ''),
             (_('Client PO Number'), schema['ClientPONumber'].get(context)),
-            (_('Lead Analyst'), analyst_name),
+            (_('Lead Analyst'), au),
             (_('Return Sample To Client'), _('Yes') if rstc else _('No')),
             (_('Client BatchID'), schema['ClientBatchID'].get(context)),
             (_('Profile'), profile.Title() if profile else ''),
