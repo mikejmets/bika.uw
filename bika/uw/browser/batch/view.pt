@@ -9,7 +9,6 @@
         .table {
           display: table;
           width: 100%;
-          margin-top: 1em;
          }
         .tr  {
           display: table-row;
@@ -103,78 +102,56 @@
           width:auto;
           padding:10px;
         }
-        .samples .td.barcode-container {
-          width:auto;
-          padding:10px 20px;
-        }
 </style>
 <div class="table samples"
      tal:define="sample_rows python:view.sample_rows()"
      tal:condition="sample_rows">
+    <h2>Samples</h2>
     <div class="tr">
         <tal:x tal:repeat="n python:sample_rows[0]">
-            <div class="th" tal:content="python:n[0] if n[0] != 'Barcode' else ''"></div>
+            <div class="th" tal:content="python:n[0]"></div>
         </tal:x>
     </div>
     <div class="tr" tal:repeat="row sample_rows">
-        <tal:x tal:repeat="n python:row">
-            <div class="td barcode-container"
-                 tal:condition="python:n[0]=='Barcode'">
-                <div class="barcode" tal:attributes="data-id python:n[1];">
-                </div>
-            </div>
-            <div class="td value"
-                 tal:condition="python:n[0]!='Barcode'"
-                 tal:content="structure python:n[1]"></div>
-        </tal:x>
+        <div tal:repeat="n python:row"
+             class="td value"
+             tal:content="structure python:n[1]"></div>
     </div>
 </div>
 
 <style type="text/css">
-        /*analysis table*/
-        /*summary table*/
-        .table.analysis {
-          border-top:1px solid #ddd;
-        }
-        .analysis .td {
+        /*analyses table*/
+        .analyses .td {
           border-bottom:1px solid #ddd;
         }
+        .analyses .th {
+          font-weight:bold;
+          border-top:1px solid #aaa;
+          border-bottom:1px solid #aaa;
+          background-color: #eeeeee;
+          width:auto;
+          padding:10px;
+        }
+        .analyses .td.value {
+          width:auto;
+          padding:10px;
+        }
 </style>
-<div class="table analysis"
-     tal:define="rows python:view.analysis_rows()">
-    <div class="tr" tal:repeat="i python: range(0, len(rows), 2)">
-        <tal:x tal:define="fst python:rows[i]; snd python:rows[i+1] if len(rows) > i+1 else False">
-            <div class="td label" tal:content="structure python:fst[0][1]"></div>
-            <div class="td value" tal:content="structure python:fst[2][1]"></div>
-            <div class="td spacer"></div>
-            <div class="td label" tal:condition="python:snd" tal:content="structure python:snd[0][1]"></div>
-            <div class="td value" tal:condition="python:snd" tal:content="structure python:snd[2][1]"></div>
-            <tal:empty tal:condition="python:not snd">
-                <div class="td label"></div>
-                <div class="td value"></div>
-            </tal:empty>
-            <div class="td spacer"></div>
+<div class="table analyses"
+     tal:define="analysis_rows python:view.analysis_rows()"
+     tal:condition="analysis_rows">
+    <h2>Analyses</h2>
+    <div class="tr">
+        <tal:x tal:repeat="n python:analysis_rows[0]">
+            <div class="th" tal:content="python:n[0]"></div>
         </tal:x>
+    </div>
+    <div class="tr" tal:repeat="row analysis_rows">
+        <div tal:repeat="n python:row"
+             class="td value"
+             tal:content="structure python:n[1]"></div>
     </div>
 </div>
 
-<script type="text/javascript">
-    // Barcode generator
-    $('.barcode').each(function() {
-        var id = $(this).attr('data-id');
-        $(this).barcode(id, "code128",
-                        {barHeight: 12,
-                         addQuietZone: false,
-                         showHRI: false });
-    });
-</script>
-
 </body>
 </html>
-
-<!--
-                <div tal:attributes="id python:'barcode_%s'%(n[1])"></div>
-                <script type='text/javascript'
-                        tal:content="python:'$(\'div[id=barcode_%s]\').barcode(\'%s\', \'code128\', {\'barHeight\':13, addQuietZone:true, showHRI: false })'%(n[1],n[1])">
-                </script>
--->

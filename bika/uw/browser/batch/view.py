@@ -1,13 +1,12 @@
-import os
-import tempfile
+# coding=utf-8
 
 from Products.CMFCore.utils import getToolByName
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from openpyxl import load_workbook
-from zope.interface import implements
+from pkg_resources import resource_filename
 
-from bika.lims.browser import BrowserView
 from bika.lims import bikaMessageFactory as _, t
+from bika.lims.browser import BrowserView
 from bika.lims.utils import createPdf
 
 
@@ -42,12 +41,13 @@ class ViewView(BrowserView):
             return self.view_wrapper()
 
     def pdf(self):
-        pdf_data = createPdf(t(self.pdf_wrapper()), css=self.css_local_fn())
+        cssfn = resource_filename("bika.uw", "browser/css/batch-pdf.css")
+        pdf_data = createPdf(t(self.pdf_wrapper()), css=cssfn)
         setheader = self.request.RESPONSE.setHeader
         setheader('Content-Length', len(pdf_data))
         setheader('Content-Type', 'application/pdf')
-        setheader('Content-Disposition', 'inline; filename=\"%s.pdf\"' %
-                  self.context.Title())
+        fn = self.context.Title() + ".pdf"
+        setheader('Content-Disposition', 'inline; filename="{0}"'.format(fn))
         self.request.RESPONSE.write(pdf_data)
 
     def xlsx_upload(self):
@@ -57,13 +57,6 @@ class ViewView(BrowserView):
             self.context.plone_utils.addPortalMessage(message, 'error')
             return self.view_wrapper()
         workbook = load_workbook(filename=xlsx_file)
-        
-
-
-    def css_local_fn(self):
-        from pkg_resources import resource_filename
-        cssfn = resource_filename("bika.uw", "browser/css/batch-pdf.css")
-        return cssfn
 
     def summary_rows(self, show_empty=True):
         """These are the pairs of fields which will be rendered in the
@@ -82,26 +75,30 @@ class ViewView(BrowserView):
         rstc = schema['ReturnSampleToClient'].get(context)
         profile = schema['Profile'].get(context)
         sampletype = schema['SampleType'].get(context)
-        samplematrix = schema['SampleMatrix'].get(context)
-        sampledwithmetric = '%s %s' % (
-            schema['AmountSampled'].get(self.context),
-            schema['AmountSampledMetric'].get(self.context))
         biohazardous = schema['BioHazardous'].get(context)
         qcbp = schema['QCBlanksProvided'].get(context)
         sqcm = schema['SampleAndQCLotMatch'].get(context)
-        scond = schema['SampleCondition'].get(context)
         datesampled = self.ulocalized_time(schema['DateSampled'].get(context))
         msdsorsds = schema['MSDSorSDS'].get(context)
+
+        au = schema['LeadAnalyst'].get(context)
+        if au:
+            proxies = self.portal_catalog(getUsername=au)
+            if proxies:
+                analyst_name = proxies[0].getObject().Title()
+            else:
+                analyst_name = au
+        else:
+            analyst_name = au
 
         rows = [
             (_('Batch'), context.getId()),
             (_('Client'), client.Title() if client else ''),
-            (
-                _('Client Project Name'),
-                schema['ClientProjectName'].get(context)),
+            (_('Client Project Name'),
+             schema['ClientProjectName'].get(context)),
             (_('Contact'), contact.Title() if contact else ''),
             (_('Client PO Number'), schema['ClientPONumber'].get(context)),
-            (_('Lead Analyst'), schema['LeadAnalyst'].get(context)),
+            (_('Lead Analyst'), analyst_name),
             (_('Return Sample To Client'), _('Yes') if rstc else _('No')),
             (_('Client BatchID'), schema['ClientBatchID'].get(context)),
             (_('Profile'), profile.Title() if profile else ''),
@@ -111,16 +108,12 @@ class ViewView(BrowserView):
             (_('Sample Site'), schema['SampleSite'].get(context)),
             (_('Sample Type'), sampletype.Title() if sampletype else ''),
             (_('Media Lot Nr'), schema['MediaLotNr'].get(context)),
-            (_('Sample Matrix'), samplematrix.Title() if samplematrix else ''),
             (_('Sample Temperature'), schema['SampleTemperature'].get(context)),
-            (_('Sample Condition'), scond.Title() if scond else ''),
-            (_('Amount Sampled'), sampledwithmetric),
             (_('Bio Hazardous'), _('Yes') if biohazardous else _('No')),
             (_('QC Blanks Provided'), _('Yes') if qcbp else _('No')),
             (_('Sample And QC Lot Match'), _('Yes') if sqcm else _('No')),
-            (_('MSDS or SDS'), _('Yes') if msdsorsds else _('No'))
-            # ('StorageLocation', schema['StorageLocation'].get(context)),
-            # ('Container', schema['Container'].get(context))),
+            (_('MSDS or SDS'), _('Yes') if msdsorsds else _('No')),
+            ('StorageLocation', schema['StorageLocation'].get(context)),
         ]
 
         DateApproved = schema['DateApproved'].get(context)
@@ -209,7 +202,7 @@ class ViewView(BrowserView):
         ClientSampleComment = schema['ClientSampleComment'].get(context)
         remark_items = [r for r in schema['Remarks'].get(context).split('===')
                         if r]
-        Remarks = ''.join(['=== %s<br/>'%(r) for r in remark_items])
+        Remarks = ''.join(['=== {0}<br/>'.format(r) for r in remark_items])
         schema['Remarks'].get(context).split()
 
         rows = [
@@ -236,29 +229,26 @@ class ViewView(BrowserView):
         to display them.  html is rendered structurally in values.
         """
         schema = sample.Schema()
-        workflow = getToolByName(sample, 'portal_workflow')
         #
         sampletype = schema['SampleType'].get(sample)
         samplematrix = schema['SampleMatrix'].get(sample)
-        biohazardous = schema['BioHazardous'].get(sample)
+        scond = schema['SampleCondition'].get(self.context)
         datesampled = self.ulocalized_time(schema['DateSampled'].get(sample))
+        samplematrix = schema['SampleMatrix'].get(self.context)
         sampledwithmetric = schema['AmountSampled'].get(sample) + ' ' + \
                             schema['AmountSampledMetric'].get(sample)
         rows = [
             (_('Sample ID'),
              a(sample.absolute_url(), sample.Title()) if sample else ''),
-            (_('Client ID'),
-             a(sample.absolute_url(),
-               sample.getClientSampleID()) if sample else ''),
-            (_('Barcode'), sample.id),
-             (_('Analysis Requests'),
-             ", ".join([a(ar.absolute_url(), ar.Title())
-                        for ar in sample.getAnalysisRequests()])),
-            (_('Sample Site'), schema['SampleSite'].get(sample)),
+            (_('Client ID'), a(sample.absolute_url(),
+                               sample.getClientSampleID()) if sample else ''),
+            (_('Analysis Requests'), ", ".join(
+                [a(ar.absolute_url(), ar.Title()) for ar in
+                 sample.getAnalysisRequests()])),
+            (_('Sample Condition'), scond),
             (_('Sample Type'), sampletype.Title() if sampletype else ''),
             (_('Sample Matrix'), samplematrix.Title() if samplematrix else ''),
             (_('Amount Sampled'), sampledwithmetric),
-            (_('Bio Hazardous'), _('Yes') if biohazardous else _('No')),
         ]
         return rows
 
@@ -283,25 +273,13 @@ class ViewView(BrowserView):
         This output decides the ordering of fields and the html that's used
         to display them.  html is rendered structurally in values.
         """
-        ar = analysis.aq_parent
-        ar_schema = ar.Schema()
-        sample = ar.getSample()
-        sample_schema = sample.Schema()
         #
-        workflow = getToolByName(sample, 'portal_workflow')
-        #
-        sampledwithmetric = '%s %s' % (
-            sample_schema['AmountSampled'].get(self.context),
-            sample_schema['AmountSampledMetric'].get(self.context))
-        #
-        pairs = [
-            (_('Sample ID'),
-             sample.Title() if sample else ''),
-            (_('Client Sample ID'),
-             a(sample.absolute_url(), sample.getClientSampleID()) if sample else ''),
-            (_('Analysis'),
-             analysis.Title()),
-        ]
+        title = analysis.Title()
+        service = analysis.getService()
+        caslist = service.Schema()['Identifiers'].get(service)
+        castitle = "%(Identifier)s" % (caslist[0]) if caslist else ''
+        pairs = [(_('Analysis'), title),
+                 (_('CAS'), castitle)]
         return pairs
 
     def analysis_rows(self):
@@ -310,8 +288,13 @@ class ViewView(BrowserView):
         """
         context = self.context
         ars = context.getAnalysisRequests()
-        analyses = []
+        analyses = {}
         for ar in ars:
-            analyses.extend(ar.getAnalyses(cancellation_state='active',
-                                           full_objects=True))
-        return [self.analysis_pairs(analysis) for analysis in analyses]
+            for analysis in ar.getAnalyses(cancellation_state='active',
+                                           full_objects=True):
+                title = analysis.Title()
+                if title not in analyses:
+                    analyses[title] = analysis
+        analyses = [self.analysis_pairs(analysis) for analysis in analyses.values()]
+        return sorted(analyses, cmp=lambda x, y: cmp(x[0], y[0]))
+
