@@ -33,4 +33,6 @@
   <include package=".extenders"/>
   <include package=".workflow"/>
 
+  <include file="adapters.zcml"/>
+
 </configure>
