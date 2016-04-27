@@ -21,22 +21,6 @@
           display: table-cell;
           padding:5px;
         }
-        .label {
-          font-weight:bold;
-         }
-        .value {
-          color:#333;
-         }
-        .spacer {
-          min-width: 50px;
-        }
-        /*summary table*/
-        .table.summary {
-          border-top:1px solid #ddd;
-        }
-        .summary .td {
-          border-bottom:1px solid #ddd;
-        }
     </style>
 </head>
 <body>
@@ -130,11 +114,15 @@
           border-bottom:1px solid #aaa;
           background-color: #eeeeee;
           width:auto;
-          padding:10px;
+          padding:3px;
         }
-        .analyses .td.value {
+        .value {
           width:auto;
-          padding:10px;
+          padding:2px 50px 2px 0;
+          white-space:nowrap;
+        }
+        .notes {
+            width:100%;
         }
 </style>
 <div class="table analyses"
@@ -145,11 +133,13 @@
         <tal:x tal:repeat="n python:analysis_rows[0]">
             <div class="th" tal:content="python:n[0]"></div>
         </tal:x>
+        <div class="th">&nbsp;</div>
     </div>
     <div class="tr" tal:repeat="row analysis_rows">
         <div tal:repeat="n python:row"
              class="td value"
              tal:content="structure python:n[1]"></div>
+        <div class="td notes">&nbsp;</div>
     </div>
 </div>
 
