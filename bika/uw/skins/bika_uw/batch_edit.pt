@@ -37,8 +37,8 @@
             {'fieldset': 'Receive and Accept', 'fieldname': 'SampleType',           'after':  'SamplingDeviation'},
             {'fieldset': 'Receive and Accept', 'fieldname': 'SampleMatrix',         'after':  'SampleType'},
             {'fieldset': 'Receive and Accept', 'fieldname': 'SamplingDate',         'after':  'DefaultContainer'},
-            {'fieldset': 'Dates',              'fieldname': 'BatchDate',            'before': 'SamplingDate'},
-            {'fieldset': 'Dates',              'fieldname': 'DateSampled',          'after':  'SamplingDate'},
+            {'fieldset': 'Dates',              'fieldname': 'BatchDate',            'before': 'DateReceived'},
+            {'fieldset': 'Dates',              'fieldname': 'SamplingDate',         'after':  'BatchDate'},
           ]">
       <form name="edit_form"
           method="post"

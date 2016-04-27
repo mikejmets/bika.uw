@@ -78,7 +78,7 @@ class ViewView(BrowserView):
         hazardous = schema['Hazardous'].get(context)
         qcbp = schema['QCBlanksProvided'].get(context)
         sqcm = schema['SampleAndQCLotMatch'].get(context)
-        datesampled = self.ulocalized_time(schema['DateSampled'].get(context))
+        samplingdate = self.ulocalized_time(schema['SamplingDate'].get(context))
         msdsorsds = schema['MSDSorSDS'].get(context)
         sloc = schema['StorageLocation'].get(context)
 
@@ -101,7 +101,7 @@ class ViewView(BrowserView):
             (_('Client BatchID'), schema['ClientBatchID'].get(context)),
             (_('Profile'), profile.Title() if profile else ''),
             (_('Activity Sampled'), schema['ActivitySampled'].get(context)),
-            (_('Date Sampled'), datesampled),
+            (_('Sampling Date'), samplingdate),
             (_('Sample Source'), schema['SampleSource'].get(context)),
             (_('Sample Site'), schema['SampleSite'].get(context)),
             (_('Sample Type'), sampletype.Title() if sampletype else ''),
@@ -231,7 +231,7 @@ class ViewView(BrowserView):
         sampletype = schema['SampleType'].get(sample)
         samplematrix = schema['SampleMatrix'].get(sample)
         scond = schema['SampleCondition'].get(self.context)
-        datesampled = self.ulocalized_time(schema['DateSampled'].get(sample))
+        samplingdate = self.ulocalized_time(schema['SamplingDate'].get(sample))
         samplematrix = schema['SampleMatrix'].get(self.context)
         sampledwithmetric = schema['AmountSampled'].get(sample) + ' ' + \
                             schema['AmountSampledMetric'].get(sample)

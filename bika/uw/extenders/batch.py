@@ -392,13 +392,13 @@ ClientBatchComment = ExtTextField(
     )
 )
 
-DateSampled = ExtDateTimeField(
-    'DateSampled',
+SamplingDate = ExtDateTimeField(
+    'SamplingDate',
     mode="rw",
     read_permission=permissions.View,
     write_permission=permissions.ModifyPortalContent,
     widget=DateTimeWidget(
-        label=_("Date Sampled"),
+        label=_("Sampling Date"),
         size=20,
         visible={'edit': 'visible',
                  'view': 'visible',
@@ -746,7 +746,7 @@ class BatchSchemaExtender(object):
         Container,
         ClientPONumber,
         ClientBatchComment,
-        DateSampled,
+        SamplingDate,
         StorageLocation,
         ReturnSampleToClient,
         SampleTemperature,
@@ -789,7 +789,7 @@ class BatchSchemaExtender(object):
             "title",
             "Client",
             "description",
-            "DateSampled",
+            "SamplingDate",
             "BatchDate",
             "BatchLabels",
             "ClientProjectName",
@@ -837,7 +837,7 @@ class BatchSchemaExtender(object):
             "ApprovedExceptionsToStandardPractice",
         ]
         schematas["Dates"] = [
-            ## "DateSampled",
+            ## "SamplingDate",
             "DateQADue",
             "DatePublicationDue",
             "DateApproved",
