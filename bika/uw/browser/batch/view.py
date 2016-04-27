@@ -80,6 +80,7 @@ class ViewView(BrowserView):
         sqcm = schema['SampleAndQCLotMatch'].get(context)
         datesampled = self.ulocalized_time(schema['DateSampled'].get(context))
         msdsorsds = schema['MSDSorSDS'].get(context)
+        sloc = schema['StorageLocation'].get(context)
 
         au = schema['LeadAnalyst'].get(context)
         for proxy in self.bika_setup_catalog(portal_type='LabContact'):
@@ -110,7 +111,7 @@ class ViewView(BrowserView):
             (_('QC Blanks Provided'), _('Yes') if qcbp else _('No')),
             (_('Sample And QC Lot Match'), _('Yes') if sqcm else _('No')),
             (_('MSDS or SDS'), _('Yes') if msdsorsds else _('No')),
-            ('StorageLocation', schema['StorageLocation'].get(context)),
+            (_('Storage Location'), sloc.Title() if sloc else ''),
         ]
 
         DateApproved = schema['DateApproved'].get(context)
