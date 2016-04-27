@@ -75,7 +75,7 @@ class ViewView(BrowserView):
         rstc = schema['ReturnSampleToClient'].get(context)
         profile = schema['Profile'].get(context)
         sampletype = schema['SampleType'].get(context)
-        biohazardous = schema['BioHazardous'].get(context)
+        hazardous = schema['Hazardous'].get(context)
         qcbp = schema['QCBlanksProvided'].get(context)
         sqcm = schema['SampleAndQCLotMatch'].get(context)
         datesampled = self.ulocalized_time(schema['DateSampled'].get(context))
@@ -106,7 +106,7 @@ class ViewView(BrowserView):
             (_('Sample Type'), sampletype.Title() if sampletype else ''),
             (_('Media Lot Nr'), schema['MediaLotNr'].get(context)),
             (_('Sample Temperature'), schema['SampleTemperature'].get(context)),
-            (_('Bio Hazardous'), _('Yes') if biohazardous else _('No')),
+            (_('Hazardous'), _('Yes') if hazardous else _('No')),
             (_('QC Blanks Provided'), _('Yes') if qcbp else _('No')),
             (_('Sample And QC Lot Match'), _('Yes') if sqcm else _('No')),
             (_('MSDS or SDS'), _('Yes') if msdsorsds else _('No')),

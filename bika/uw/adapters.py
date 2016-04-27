@@ -19,7 +19,7 @@ class BatchARAddFieldsWidgetVisibility(object):
             'CCEmails',
             'ClientOrderNumber',
             'ReturnSampleToClient',
-            'BioHazardous',
+            'Hazardous',
             'Template',
             'Container',
         ]

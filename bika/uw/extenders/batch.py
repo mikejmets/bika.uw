@@ -464,8 +464,8 @@ SampleCondition = ExtReferenceField(
     ),
 )
 
-BioHazardous = ExtBooleanField(
-    'BioHazardous',
+Hazardous = ExtBooleanField(
+    'Hazardous',
     widget=BooleanWidget(
         label=_("Hazardous"),
     )
@@ -751,7 +751,7 @@ class BatchSchemaExtender(object):
         ReturnSampleToClient,
         SampleTemperature,
         SampleCondition,
-        BioHazardous,
+        Hazardous,
         Methods,
         DateApproved,
         DateReceived,
@@ -823,7 +823,7 @@ class BatchSchemaExtender(object):
             "MSDSorSDS",
             "SampleAndQCLotMatch",
             "ClientSampleComment",
-            "BioHazardous",
+            "Hazardous",
             "ExceptionalHazards",
             "AmountSampled",
             "AmountSampledMetric",
