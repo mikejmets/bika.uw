@@ -25,8 +25,7 @@ class BatchARAddFieldsWidgetVisibility(object):
         ]
         state = default if default else 'visible'
         fieldName = field.getName()
-        if mode == 'edit' and fieldName in hidden:
-            import pdb;pdb.set_trace()
-            if context.aq_parent.portal_type == 'Batch' and field in hidden:
+        if mode == 'add' and fieldName in hidden:
+            if context.aq_parent.portal_type == 'Batch' and fieldName in hidden:
                 state = 'hidden'
         return state
