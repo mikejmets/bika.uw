@@ -1,25 +1,28 @@
+from Products.Archetypes.public import *
 from archetypes.schemaextender.interfaces import IOrderableSchemaExtender
 from archetypes.schemaextender.interfaces import ISchemaModifier
-from bika.lims import bikaMessageFactory as _
-from bika.lims.browser.widgets import DateTimeWidget
-from bika.lims.browser.widgets import DecimalWidget as bikaDecimalWidget
-from bika.lims.fields import *
-from bika.lims.interfaces import ISample
-from Products.Archetypes.public import *
 from zope.component import adapts
 from zope.interface import implements
+
+from bika.lims import bikaMessageFactory as _
+from bika.lims.fields import *
+from bika.lims.interfaces import ISample
+
+from bika.lims.browser.widgets import ReferenceWidget as brw
 
 # This is acquired here from batch, and acquired by Sample.
 ClientSampleComment = ExtTextField(
     'ClientSampleComment',
     default_content_type='text/x-web-intelligent',
-    allowable_content_types = ('text/plain', ),
+    allowable_content_types=('text/plain',),
     default_output_type="text/plain",
     acquire=True,
     widget=TextAreaWidget(
         render_own_label=True,
         label=_('Client Sample Comment'),
-        description=_("These comments will be applied as defaults in Client Remarks field for new Samples."),
+        description=_(
+            "These comments will be applied as defaults in Client Remarks "
+            "field for new Samples."),
     )
 )
 
@@ -55,41 +58,80 @@ AmountSampledMetric = ExtStringField(
 ExceptionalHazards = ExtTextField(
     'ExceptionalHazards',
     default_content_type='text/x-web-intelligent',
-    allowable_content_types = ('text/plain', ),
+    allowable_content_types=('text/plain',),
     default_output_type="text/plain",
     acquire=True,
     widget=TextAreaWidget(
         render_own_label=True,
         label=_('Exceptional hazards'),
-        description=_("The value selected here will be set as the default for new Samples."),
+        description=_(
+            "The value selected here will be set as the default for new "
+            "Samples."),
     )
 )
 
 SampleSite = ExtStringField(
-        'SampleSite',
-        searchable=True,
-        required=0,
-        widget=StringWidget(
-                visible={'edit': 'visible',
-                         'view': 'visible',
-                         'add': 'edit',
-                         'header_table': 'visible',
-                         'sample_registered': {'view': 'invisible', 'edit': 'invisible', 'add': 'edit'},
-                         'to_be_sampled':     {'view': 'invisible', 'edit': 'invisible'},
-                         'sampled':           {'view': 'invisible', 'edit': 'invisible'},
-                         'sample_prep':       {'view': 'invisible', 'edit': 'invisible'},
-                         'to_be_preserved':   {'view': 'invisible', 'edit': 'invisible'},
-                         'sample_received':   {'view': 'invisible', 'edit': 'invisible'},
-                         'attachment_due':    {'view': 'invisible', 'edit': 'invisible'},
-                         'to_be_verified':    {'view': 'invisible', 'edit': 'invisible'},
-                         'verified':          {'view': 'invisible', 'edit': 'invisible'},
-                         'published':         {'view': 'invisible', 'edit': 'invisible'},
-                         'invalid':           {'view': 'invisible', 'edit': 'invisible'},
-                         },
-                label=_("Sample Site"),
-                description=_("This sample's Sample Site."),
-        )
+    'SampleSite',
+    searchable=True,
+    required=0,
+    widget=StringWidget(
+        visible={'edit': 'visible',
+                 'view': 'visible',
+                 'add': 'edit',
+                 'header_table': 'visible',
+                 'sample_registered': {'view': 'invisible', 'edit': 'invisible',
+                                       'add': 'edit'},
+                 'to_be_sampled': {'view': 'invisible', 'edit': 'invisible'},
+                 'sampled': {'view': 'invisible', 'edit': 'invisible'},
+                 'sample_prep': {'view': 'invisible', 'edit': 'invisible'},
+                 'to_be_preserved': {'view': 'invisible', 'edit': 'invisible'},
+                 'sample_received': {'view': 'invisible', 'edit': 'invisible'},
+                 'attachment_due': {'view': 'invisible', 'edit': 'invisible'},
+                 'to_be_verified': {'view': 'invisible', 'edit': 'invisible'},
+                 'verified': {'view': 'invisible', 'edit': 'invisible'},
+                 'published': {'view': 'invisible', 'edit': 'invisible'},
+                 'invalid': {'view': 'invisible', 'edit': 'invisible'},
+                 },
+        label=_("Sample Site"),
+        description=_("This sample's Sample Site."),
+    )
 )
+
+# This is acquired here from AR, who acquires default value from Batch.
+Container = ExtReferenceField(
+    'Container',
+    required=False,
+    allowed_types=('Container',),
+    relationship='SampleContainer',
+    acquire=True,
+    widget=brw(
+        label=_('Container'),
+        description=_('Container used for this sample.'),
+        size=20,
+        render_own_label=True,
+        visible={'edit': 'visible',
+                 'view': 'visible',
+                 'add': 'edit',
+                 'header_table': 'visible',
+                 'sample_registered':
+                     {'view': 'invisible', 'edit': 'invisible', 'add': 'edit'},
+                 'to_be_sampled': {'view': 'invisible', 'edit': 'invisible'},
+                 'sampled': {'view': 'invisible', 'edit': 'invisible'},
+                 'sample_prep': {'view': 'invisible', 'edit': 'invisible'},
+                 'to_be_preserved': {'view': 'invisible', 'edit': 'invisible'},
+                 'sample_received': {'view': 'invisible', 'edit': 'invisible'},
+                 'attachment_due': {'view': 'invisible', 'edit': 'invisible'},
+                 'to_be_verified': {'view': 'invisible', 'edit': 'invisible'},
+                 'verified': {'view': 'invisible', 'edit': 'invisible'},
+                 'published': {'view': 'invisible', 'edit': 'invisible'},
+                 'invalid': {'view': 'invisible', 'edit': 'invisible'},
+                 },
+        catalog_name='bika_setup_catalog',
+        base_query={'inactive_state': 'active'},
+        showOn=True,
+    ),
+)
+
 
 class SampleSchemaExtender(object):
     adapts(ISample)
@@ -99,6 +141,7 @@ class SampleSchemaExtender(object):
         ClientSampleComment,
         AmountSampled,
         AmountSampledMetric,
+        Container,
         ExceptionalHazards,
         SampleSite,
     ]
@@ -133,6 +176,3 @@ class SampleSchemaModifier(object):
         for field in toremove:
             schema[field].required = False
             schema[field].widget.visible = False
-
-    def fiddle(self, schema):
-        return schema

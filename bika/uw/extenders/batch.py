@@ -346,13 +346,10 @@ Profile = ExtReferenceField(
 Container = ExtReferenceField(
     'Container',
     allowed_types=('Container',),
-    relationship='AnalysisRequestContainer',
-    mode="rw",
-    read_permission=permissions.View,
-    write_permission=permissions.ModifyPortalContent,
+    relationship='BatchContainer',
     widget=brw(
         label=_('Default Container'),
-        description=_('Default container for new sample partitions'),
+        description=_('Default container for new samples in this work order'),
         size=20,
         visible={'edit': 'visible',
                  'view': 'visible',

@@ -18,10 +18,7 @@ class BatchARAddFieldsWidgetVisibility(object):
             'CCContact',
             'CCEmails',
             'ClientOrderNumber',
-            'ReturnSampleToClient',
-            'Hazardous',
             'Template',
-            'Container',
         ]
         state = default if default else 'visible'
         fieldName = field.getName()

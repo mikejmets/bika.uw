@@ -12,5 +12,6 @@
     <adapter factory=".analysisservice.AnalysisServiceSchemaModifier" />
     <adapter factory=".sample.SampleSchemaExtender" />
     <adapter factory=".sample.SampleSchemaModifier" />
+    <adapter factory=".samplepartition.SamplePartitionSchemaModifier" />
 
 </configure>
