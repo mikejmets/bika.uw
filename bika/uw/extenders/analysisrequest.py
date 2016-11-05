@@ -175,7 +175,7 @@ class AnalysisRequestSchemaExtender(object):
         schematas['default'].insert(index, 'ClientSampleComment')
         schematas['default'].insert(index, 'SampleSite')
 
-        index = schematas['AnalysisRequest and Sample Fields'].index('BioHazardous')
+        index = schematas['AnalysisRequest and Sample Fields'].index('Hazardous')
         schematas['AnalysisRequest and Sample Fields'].insert(index, 'AmountSampledMetric')
         schematas['AnalysisRequest and Sample Fields'].insert(index, 'AmountSampled')
 
