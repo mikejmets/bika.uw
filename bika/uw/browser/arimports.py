@@ -87,7 +87,7 @@ class ClientARImportAddView(BrowserView):
         # parse the CSV data into the interanl data structure
         import_data = ImportData(csvfile)
 
-        # Validate the data
+        # Validate the import data
         valid = import_data.validate()
         if type(valid) in types.StringTypes:
             transaction_note(valid)
@@ -123,7 +123,6 @@ class ClientARImportAddView(BrowserView):
             DateImported=DateTime(),
             Analyses=import_data.get_data("samples_meta"),
         )
-        arimport._renameAfterCreation()
 
         # DateSampled, Media, SamplePoint, Activity Sampled
         _10B, _10C, _10D, _10E = import_data.get_data("samples_meta")
@@ -137,11 +136,12 @@ class ClientARImportAddView(BrowserView):
                 folder=arimport,
                 ClientSid=_xB,
             )
-            aritem._renameAfterCreation()
+            aritem.setAnalyses(sample)
 
             # progress
             self.progressbar_progress(n, len(sample_data))
 
+        arimport._renameAfterCreation()
         return arimport, "Success"
 
     def create_ar_import_item_obj(self, folder=None, id=None, title=None, **kwargs):
