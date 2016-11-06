@@ -21,6 +21,7 @@ from collective.progressbar.events import UpdateProgressEvent
 from collective.progressbar.events import InitialiseProgressBar
 
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+from Products.Archetypes.event import ObjectInitializedEvent
 from Products.statusmessages.interfaces import IStatusMessage
 from Products.CMFPlone.utils import transaction_note
 from Products.CMFPlone.utils import _createObjectByType
@@ -46,23 +47,21 @@ class ClientARImportAddView(BrowserView):
 
         if self.form_get('submitted'):
             csvfile = self.form_get('csvfile')
-            # client_id = self.form_get('ClientID')
             debug_mode = self.form_get('debug')
 
             if debug_mode == "1":
                 return self.template()
 
-            arimport, msg = self._import_file(csvfile)
-            if arimport:
-                msg = "AR Import complete"
+            obj, msg = self._import_file(csvfile)
+            if obj:
+                msg = "Import complete"
                 self.statusmessage(_(msg), "info")
-                url = arimport.absolute_url()
+                url = obj.absolute_url()
             else:
                 self.statusmessage(_(msg), "error")
                 url = urljoin(self.context.absolute_url(), "arimport_add")
             return self.redirect(url)
 
-        # Render the AR import add form
         return self.template()
 
     def parsed_import_data(self):
@@ -70,7 +69,8 @@ class ClientARImportAddView(BrowserView):
         """
         csvfile = self.form_get('csvfile')
         if csvfile:
-            return ImportData(csvfile).to_json()
+            import_data = ImportData(csvfile)
+            return import_data.to_json()
         return None
 
     def redirect(self, url):
@@ -103,84 +103,100 @@ class ClientARImportAddView(BrowserView):
 
         # Note: The variable names refer to the spreadsheet cells, e.g.:
         #       _2B is the cell at column B row 2.
-
+        #
         # File name, Client name, Client ID, Contact, Client Order Number, Client Reference
         _2B, _2C, _2D, _2E, _2F, _2G = import_data.get_data("header")
-
         # title, BatchID, description, ClientBatchID, ReturnSampleToClient
         _4B, _4C, _4D, _4E, _4F = import_data.get_data("batch_header")
-
         # Client Comment, Lab Comment
         _6B, _6C = import_data.get_data("batch_meta")
-
         # DateSampled, Media, SamplePoint, Activity Sampled
         _10B, _10C, _10D, _10E = import_data.get_data("samples_meta")
 
-        # Create an ARImport object
-        arimport = self.create_ar_import_obj(
-            folder=client,
-            title=import_data.get_csv_filename())
-        arimport.unmarkCreationFlag()
-        arimport.edit(
-            # description(text:rw)
+        batch_data = dict(
+            # <Field id(string:rw)>,
+            # <Field BatchID(string:rw)>,
+            BatchID=_4C,
+            # <Field title(string:rw)>,
+            title=_4B,
+            # <Field Client(reference:rw)>,
+            Client=client,
+            # <Field description(text:rw)>,
             description=_4D,
-            # FileName(string:rw)
-            FileName=_2B,
-            # OriginalFile(file:rw)
-            OriginalFile=csvfile,
-            # ClientTitle(string:rw)
-            ClientTitle=_2C,
-            # ClientPhone(string:rw)
-            ClientPhone="",
-            # ClientFax(string:rw)
-            ClientFax="",
-            # ClientAddress(string:rw)
-            ClientAddress="",
-            # ClientCity(string:rw)
-            ClientCity="",
-            # ClientID(string:rw)
-            ClientID=_2D,
-            # ContactID(string:rw)
-            ContactID="",
-            # ContactName(string:rw)
-            ContactName=_2E,
-            # Contact(reference:rw)
-            Contact=None,
-            # ClientEmail(string:rw)
-            ClientEmail="",
-            # CCContactID(string:rw)
-            CCContactID="",
-            # CCContact(reference:rw)
-            CCContact="",
-            # CCNamesReport(string:rw)
-            CCNamesReport="",
-            # CCEmailsReport(string:rw)
-            CCEmailsReport="",
-            # CCEmailsInvoice(string:rw)
-            CCEmailsInvoice="",
-            # OrderID(string:rw)
-            OrderID=_4E,
-            # QuoteID(string:rw)
-            QuoteID="",
-            # SamplePoint(string:rw)
-            SamplePoint=_10D,
-            # Temperature(string:rw)
-            Temperature="",
-            # DateImported(datetime:rw)
-            DateImported=DateTime(),
-            # DateApplied(datetime:rw)
-            DateApplied=None,
-            # NumberSamples(integer:rw)
-            NumberSamples=None,
-            # Status(boolean:rw)
-            Status=False,
-            # Remarks(lines:rw)
-            Remarks=[],
-            # Analyses(lines:rw)
-            Analyses=[],
-            # Priority(reference:rw)>
-            Priority=None,
+            # <Field DateSampled(datetime_ng:rw)>,
+            DateSampled=DateTime(_10B),
+            # <Field BatchDate(datetime:rw)>,
+            # <Field BatchLabels(lines:rw)>,
+            # <Field ClientProjectName(string:rw)>,
+            # <Field ClientBatchID(string:rw)>,
+            # <Field Contact(reference:rw)>,
+            # <Field CCContact(reference:rw)>,
+            # <Field CCEmails(lines:rw)>,
+            # <Field InvoiceContact(reference:rw)>,
+            # <Field ClientBatchComment(text:rw)>,
+            # <Field ClientPONumber(string:rw)>,
+            # <Field ReturnSampleToClient(boolean:rw)>,
+            # <Field SampleSite(string:rw)>,
+            # <Field SampleSource(string:rw)>,
+            # <Field SampleType(reference:rw)>,
+            # <Field SampleMatrix(reference:rw)>,
+            # <Field Remarks(text:rw)>,
+            # <Field InheritedObjects(reference:rw)>,
+            # <Field InheritedObjectsUI(InheritedObjects:rw)>,
+            # <Field constrainTypesMode(integer:rw)>,
+            # <Field locallyAllowedTypes(lines:rw)>,
+            # <Field immediatelyAddableTypes(lines:rw)>,
+            # <Field allowDiscussion(boolean:rw)>,
+            # <Field excludeFromNav(boolean:rw)>,
+            # <Field nextPreviousEnabled(boolean:rw)>,
+            # <Field subject(lines:rw)>,
+            # <Field relatedItems(reference:rw)>,
+            # <Field location(string:rw)>,
+            # <Field language(string:rw)>,
+            # <Field effectiveDate(datetime:rw)>,
+            # <Field expirationDate(datetime:rw)>,
+            # <Field creation_date(datetime:rw)>,
+            # <Field modification_date(datetime:rw)>,
+            # <Field creators(lines:rw)>,
+            # <Field contributors(lines:rw)>,
+            # <Field rights(text:rw)>,
+            # <Field Analysts(lines:rw)>,
+            # <Field LeadAnalyst(string:rw)>,
+            # <Field Methods(reference:rw)>,
+            # <Field Profile(reference:rw)>,
+            # <Field NonStandardMethodInstructions(text:rw)>,
+            # <Field ApprovedExceptionsToStandardPractice(text:rw)>,
+            # <Field StorageLocation(reference:rw)>,
+            # <Field SampleTemperature(string:rw)>,
+            # <Field SampleCondition(reference:rw)>,
+            # <Field Container(reference:rw)>,
+            # <Field ActivitySampled(string:rw)>,
+            # <Field MediaLotNr(string:rw)>,
+            # <Field QCBlanksProvided(boolean:rw)>,
+            # <Field MSDSorSDS(boolean:rw)>,
+            # <Field SampleAndQCLotMatch(boolean:rw)>,
+            # <Field ClientSampleComment(text:rw)>,
+            ClientSampleComment=_6B,
+            # <Field BioHazardous(boolean:rw)>,
+            # <Field ExceptionalHazards(text:rw)>,
+            # <Field AmountSampled(string:rw)>,
+            # <Field AmountSampledMetric(string:rw)>,
+            # <Field DateQADue(datetime_ng:rw)>,
+            # <Field DatePublicationDue(datetime_ng:rw)>,
+            # <Field DateApproved(string:rw)>,
+            # <Field DateReceived(string:rw)>,
+            # <Field DateAccepted(string:rw)>,
+            # <Field DateReleased(string:rw)>,
+            # <Field DatePrepared(string:rw)>,
+            # <Field DateTested(string:rw)>,
+            # <Field DatePassedQA(string:rw)>,
+            # <Field DatePublished(string:rw)>,
+            # <Field DateCancelled(string:rw)>,
+            # <Field DateOfRetractions(lines:rw)>
         )
+
+        # Create a Batch Object
+        batch = self.create_object("Batch", folder=client, **batch_data)
 
         # List of sample data rows (lists)
         sample_data = import_data.get_sample_data()
@@ -190,73 +206,24 @@ class ClientARImportAddView(BrowserView):
             # ClientSampleID, Amount Sampled, Metric, Remarks
             _xB, _xC, _xD, _xE = sample
 
-            aritem = self.create_ar_import_item_obj(folder=arimport)
-            aritem.unmarkCreationFlag()
-            aritem.edit(
-                # SampleName(string:rw)
-                SampleName="",
-                # ClientRef(string:rw)
-                ClientRef="",
-                # ClientRemarks(string:rw)
-                ClientRemarks="",
-                # ClientSid(string:rw)
-                ClientSid=_xB,
-                # SampleType(string:rw)
-                SampleType="",
-                # SampleDate(string:rw)
-                SampleDate=_10B,
-                # NoContainers(string:rw)
-                NoContainers="",
-                # SampleMatrix(string:rw)
-                SampleMatrix="",
-                # PickingSlip(string:rw)
-                PickingSlip="",
-                # ContainerType(string:rw)
-                ContainerType="",
-                # ReportDryMatter(string:rw)
-                ReportDryMatter="",
-                # Priority(string:rw)
-                Priority="",
-                # AnalysisProfile(lines:rw)
-                AnalysisProfile=[],
-                # Analyses(lines:rw)
-                Analyses=[],
-                # Remarks(lines:rw)
-                Remarks=[_xE],
-                # AnalysisRequest(reference:rw)
-                AnalysisRequest=None,
-                # Sample(reference:rw)>
-                Sample=None,
-            )
+            # sample = self.create_object("Sample", folder=client)
 
             # progress
             self.progressbar_progress(n, len(sample_data))
 
-        return arimport, "Success"
+        return batch, "Success"
 
-    def create_ar_import_item_obj(self, folder=None, id=None, title=None, **kwargs):
-        """Create a new ARImportItem object
-        """
-        if id is None:
-            id = '%s_%s' % ('aritem', tmpID())
-        obj = _createObjectByType("ARImportItem", folder, id, title=title, **kwargs)
-        obj._renameAfterCreation()
-        # obj.unmarkCreationFlag()
-        return obj
-
-    def create_ar_import_obj(self, folder=None, id=None, title=None, **kwargs):
-        """Create a new ARImport object
+    def create_object(self, content_type, folder=None, id=None, **kwargs):
+        """Create a new ARImportItem object by type
         """
         if id is None:
             id = tmpID()
-        # Add a postfix index to the title
-        postfix = 1
-        while title in [i.Title() for i in folder.objectValues()]:
-            title = '%s-%s' % (title, postfix)
-            postfix += 1
-        obj = _createObjectByType("ARImport", folder, id, title=title, **kwargs)
+        obj = _createObjectByType(content_type, folder, id)
+        obj.processForm()
+        obj.edit(**kwargs)
         obj._renameAfterCreation()
-        # obj.unmarkCreationFlag()
+        notify(ObjectInitializedEvent(obj))
+        obj.at_post_create_script()
         return obj
 
     def progressbar_init(self, title):
@@ -303,7 +270,7 @@ class ImportData(UserDict):
     # The keys (sections) must match the values of the first column (lowered
     # and underdashified). Value of the same row get stored in fields key.
     # Following lines matching no section get appended to the data key.
-    data = {
+    _data = {
         "header": {
             "fields": [],
             "data": [],
@@ -331,15 +298,23 @@ class ImportData(UserDict):
     }
 
     def __init__(self, csvfile, delimiter=";", quotechar="'"):
-        logger.debug("ImportData::__init__")
+        logger.info("ImportData::__init__")
         self.csvfile = csvfile
+        self.csvfile.seek(0)
         self.reader = csv.reader(csvfile, delimiter=delimiter, quotechar="'")
+        self.data = self.clone_data()
         self.parse()
+
+    def clone_data(self):
+        """Make a deepcopy of the data structure
+        """
+        import copy
+        return copy.deepcopy(self._data)
 
     def parse(self):
         """Parse the CSV to the internal data structure
         """
-        success = True
+        logger.info("Parsing CSV.")
 
         section = None
         for n, row in enumerate(self.reader):
@@ -352,7 +327,7 @@ class ImportData(UserDict):
 
             # skip empty cells
             if row_data is None:
-                logger.warn("Row {0} contains no data, skipping.".format(n))
+                # logger.warn("Row {0} contains no data, skipping.".format(n))
                 continue
 
             # check if the current identifier matches a key in the data dict
@@ -369,10 +344,15 @@ class ImportData(UserDict):
                 self.data[section]["data"].append(row_data)
             except KeyError:
                 logger.error("Found invalid identifier '{0}' in Line {1}".format(row[0], n + 1))
-                success = False
                 # XXX: Mark the whole set as invalid or continue?
                 continue
-        return success
+        return self.data
+
+    def clear_data(self):
+        """Clear the internal data structure
+        """
+        logger.info("************* CLEAR ***************")
+        self.data = self.clone_data()
 
     def get_row_data(self, row, start=1, remove_trailing_empty=True):
         """extract the row values starting from 'start' and removes trailing
