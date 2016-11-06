@@ -129,13 +129,17 @@ class ClientARImportAddView(BrowserView):
             # <Field BatchLabels(lines:rw)>,
             # <Field ClientProjectName(string:rw)>,
             # <Field ClientBatchID(string:rw)>,
+            ClientBatchID=_4E,
             # <Field Contact(reference:rw)>,
+            Contact=self.get_contact_by_name(client, _2E),
             # <Field CCContact(reference:rw)>,
             # <Field CCEmails(lines:rw)>,
             # <Field InvoiceContact(reference:rw)>,
             # <Field ClientBatchComment(text:rw)>,
+            ClientBatchComment=_6B,
             # <Field ClientPONumber(string:rw)>,
             # <Field ReturnSampleToClient(boolean:rw)>,
+            ReturnSampleToClient=_4F,
             # <Field SampleSite(string:rw)>,
             # <Field SampleSource(string:rw)>,
             # <Field SampleType(reference:rw)>,
@@ -195,8 +199,21 @@ class ClientARImportAddView(BrowserView):
             # <Field DateOfRetractions(lines:rw)>
         )
 
-        # Create a Batch Object
-        batch = self.create_object("Batch", folder=client, **batch_data)
+        # Check if the batch already exists
+        batch_title = _4B
+        batch = None
+        if batch_title:
+            existing_batch = [x for x in client.objectValues('Batch')
+                              if x.title == batch_title]
+            if existing_batch:
+                batch = existing_batch[0]
+
+        if batch is None:
+            # Create a Batch Object
+            batch = self.create_object("Batch", folder=client, **batch_data)
+
+        # Add the data
+        batch.edit(**batch_data)
 
         # List of sample data rows (lists)
         sample_data = import_data.get_sample_data()
@@ -212,6 +229,16 @@ class ClientARImportAddView(BrowserView):
             self.progressbar_progress(n, len(sample_data))
 
         return batch, "Success"
+
+    def get_contact_by_name(self, client, name):
+        """Get the contact object by name
+        """
+        contact = [x for x in client.objectValues('Contact')
+                   if x.getFullname() == name]
+        if contact:
+            return contact[0]
+
+        return None
 
     def create_object(self, content_type, folder=None, id=None, **kwargs):
         """Create a new ARImportItem object by type
