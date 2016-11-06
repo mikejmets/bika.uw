@@ -2,8 +2,8 @@
 
 import os
 import csv
-import sys
 import types
+from urlparse import urljoin
 from UserDict import UserDict
 
 from DateTime import DateTime
@@ -41,27 +41,27 @@ class ClientARImportAddView(BrowserView):
         self.request = request
 
     def __call__(self):
-        request = self.request
         CheckAuthenticator(self.request.form)
 
         if self.form_get('submitted'):
             csvfile = self.form_get('csvfile')
             arimport, msg = self._import_file(csvfile)
-
             if arimport:
                 msg = "AR Import complete"
                 self.statusmessage(_(msg), "info")
-                request.response.write(
-                    '<script>document.location.href="%s"</script>' % (
-                        arimport.absolute_url()))
-                return
+                url = arimport.absolute_url()
             else:
                 self.statusmessage(_(msg), "error")
-                request.response.write(
-                    '<script>document.location.href="%s/arimport_add"</script>' % (self.context.absolute_url()))
-                return
+                url = urljoin(self.context.absolute_url(), "arimport_add")
+            return self.redirect(url)
 
+        # Render the AR import add form
         return self.template()
+
+    def redirect(self, url):
+        """Write a redirect JavaScript to the given URL
+        """
+        self.request.response.write("<script>document.location.href='{0}'</script>".format(url))
 
     def _import_file(self, csvfile):
         """Import the CSV file.
@@ -99,6 +99,8 @@ class ClientARImportAddView(BrowserView):
         arimport = self.create_ar_import_obj(
             folder=client,
             title=_2B,
+        )
+        arimport.edit(
             FileName=_2C,
             ClientTitle=_2D,
             ClientID=_2E,
@@ -106,20 +108,22 @@ class ClientARImportAddView(BrowserView):
             ClientReference=_2G,
             NumberSamples=len(sample_data),
             DateImported=DateTime(),
+            Analyses=import_data.get_data("samples_meta"),
         )
 
         # DateSampled, Media, SamplePoint, Activity Sampled
-        _9B, _9C, _9D, _9E = import_data.get_data("samples")
+        _10B, _10C, _10D, _10E = import_data.get_data("samples_meta")
 
         for n, sample in enumerate(sample_data):
+
             # ClientSampleID, Amount Sampled, Metric, Remarks
             _xB, _xC, _xD, _xE = sample
-            self.create_ar_import_item_obj(
+
+            aritem = self.create_ar_import_item_obj(
                 folder=arimport,
+            )
+            aritem.edit(
                 ClientSid=_xB,
-                SampleDate=DateTime(_9B),
-                ClientRef=_2G,
-                ClientRemarks=_xE,
             )
 
             # progress
@@ -132,9 +136,10 @@ class ClientARImportAddView(BrowserView):
         """
         if id is None:
             id = '%s_%s' % ('aritem', tmpID())
-        ar = _createObjectByType("ARImportItem", folder, id, title=title, **kwargs)
-        ar._renameAfterCreation()
-        return ar
+        obj = _createObjectByType("ARImportItem", folder, id, title=title, **kwargs)
+        # obj._renameAfterCreation()
+        # obj.unmarkCreationFlag()
+        return obj
 
     def create_ar_import_obj(self, folder=None, id=None, title=None, **kwargs):
         """Create a new ARImport object
@@ -146,9 +151,10 @@ class ClientARImportAddView(BrowserView):
         while title in [i.Title() for i in folder.objectValues()]:
             title = '%s-%s' % (title, postfix)
             postfix += 1
-        ar = _createObjectByType("ARImport", folder, id, title=title, **kwargs)
-        ar._renameAfterCreation()
-        return ar
+        obj = _createObjectByType("ARImport", folder, id, title=title, **kwargs)
+        # obj._renameAfterCreation()
+        # obj.unmarkCreationFlag()
+        return obj
 
     def progressbar_init(self, title):
         """Progress Bar
@@ -188,6 +194,12 @@ class ClientARImportAddView(BrowserView):
 class ImportData(UserDict):
     """Dictionary wrapper to hold the spreadsheet data.
     """
+
+    # Internal data representation of the spreadsheet table.
+    # Description:
+    # The keys (sections) must match the values of the first column (lowered
+    # and underdashified). Value of the same row get stored in fields key.
+    # Following lines matching no section get appended to the data key.
     data = {
         "header": {
             "fields": [],
@@ -197,15 +209,19 @@ class ImportData(UserDict):
             "fields": [],
             "data": [],
         },
+        "batch_meta": {
+            "fields": [],
+            "data": [],
+        },
         "analytes": {
             "fields": [],
             "data": [],
         },
-        "samples": {
+        "samples_meta": {
             "fields": [],
             "data": [],
         },
-        "client_samples": {
+        "samples": {
             "fields": [],
             "data": [],
         },
@@ -224,15 +240,16 @@ class ImportData(UserDict):
 
         section = None
         for n, row in enumerate(self.reader):
-            # we use row[0] as an identifier to match the key in the data dict, e.g.
-            # Batch Header -> batch_header
+            # we use row[0] as an identifier per row to match the key in the
+            # data dict, e.g. Batch Header -> batch_header
             identifier = row[0].replace(" ", "_").lower()
 
-            # get the row data (column 1 to the end of the line)
+            # get the row data (column 1 to the end of the line per default)
             row_data = self.get_row_data(row)
 
             # skip empty cells
             if row_data is None:
+                logger.warn("Row {0} contains no data, skipping.".format(n))
                 continue
 
             # check if the current identifier matches a key in the data dict
@@ -241,35 +258,25 @@ class ImportData(UserDict):
                 section = identifier
                 # remember the fields
                 self.data[identifier]["fields"] = row_data
-                # XXX: "Analytes" section contains only a single row (should be
-                #      fixed in the spreadsheet)
-                if identifier == "analytes":
-                    self.data[identifier]["data"] = row_data
                 # go to the next row
                 continue
 
-            # XXX: custom handling for the "Samples" section (should be fixed in the spreadsheet)
-            if section == "samples" and row[1] == "ClientSampleID":
-                # manually set the section
-                section = "client_samples"
-                # and add the rest of the row to the fields
-                self.data["client_samples"]["fields"] = row_data
-                continue
-
             try:
-                # append the row data
+                # append the row data to the "data" key of the current section
                 self.data[section]["data"].append(row_data)
             except KeyError:
-                logger.error("Invalid Identifier {0} in Line {1}".format(row[0], n + 1))
+                logger.error("Found invalid identifier '{0}' in Line {1}".format(row[0], n + 1))
                 success = False
                 # XXX: Mark the whole set as invalid or continue?
                 continue
         return success
 
     def get_row_data(self, row, start=1, remove_trailing_empty=True):
+        """extract the row values starting from 'start' and removes trailing
+        empty values, e.g.: ['a', 'b', '', 'd', '', ''] -> ['b', '', 'd']
+        """
         end = len(row)
         if remove_trailing_empty:
-            sys.setrecursionlimit(2000)
             # we iterate from the end of the list to the start to remove
             # empty cells
             rev = reversed(row)
@@ -281,7 +288,7 @@ class ImportData(UserDict):
         return row[start:end]
 
     def validate(self):
-        """Validate the data structure
+        """Validate the internal data structure
         """
         # Validate the sections
         for section in self.keys():
@@ -297,7 +304,6 @@ class ImportData(UserDict):
 
         # Validate the filename
         # XXX: Why do we need to do this?
-
         csv_filename = self.get_csv_filename()
         data_filename = self.get_data_filename()
 
@@ -335,4 +341,4 @@ class ImportData(UserDict):
     def get_sample_data(self):
         """Return the data of the "Samples" section
         """
-        return self.get_data("client_samples")
+        return self.get_data("samples")
