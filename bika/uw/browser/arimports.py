@@ -3,6 +3,7 @@
 import os
 import csv
 import types
+import json
 from urlparse import urljoin
 from UserDict import UserDict
 
@@ -45,6 +46,12 @@ class ClientARImportAddView(BrowserView):
 
         if self.form_get('submitted'):
             csvfile = self.form_get('csvfile')
+            # client_id = self.form_get('ClientID')
+            debug_mode = self.form_get('debug')
+
+            if debug_mode == "1":
+                return self.template()
+
             arimport, msg = self._import_file(csvfile)
             if arimport:
                 msg = "AR Import complete"
@@ -57,6 +64,14 @@ class ClientARImportAddView(BrowserView):
 
         # Render the AR import add form
         return self.template()
+
+    def parsed_import_data(self):
+        """Return the parsed data as JSON
+        """
+        csvfile = self.form_get('csvfile')
+        if csvfile:
+            return ImportData(csvfile).to_json()
+        return None
 
     def redirect(self, url):
         """Write a redirect JavaScript to the given URL
@@ -99,8 +114,6 @@ class ClientARImportAddView(BrowserView):
         arimport = self.create_ar_import_obj(
             folder=client,
             title=_2B,
-        )
-        arimport.edit(
             FileName=_2C,
             ClientTitle=_2D,
             ClientID=_2E,
@@ -110,6 +123,7 @@ class ClientARImportAddView(BrowserView):
             DateImported=DateTime(),
             Analyses=import_data.get_data("samples_meta"),
         )
+        arimport._renameAfterCreation()
 
         # DateSampled, Media, SamplePoint, Activity Sampled
         _10B, _10C, _10D, _10E = import_data.get_data("samples_meta")
@@ -121,10 +135,9 @@ class ClientARImportAddView(BrowserView):
 
             aritem = self.create_ar_import_item_obj(
                 folder=arimport,
-            )
-            aritem.edit(
                 ClientSid=_xB,
             )
+            aritem._renameAfterCreation()
 
             # progress
             self.progressbar_progress(n, len(sample_data))
@@ -312,6 +325,11 @@ class ImportData(UserDict):
                 csv_filename, data_filename)
 
         return True
+
+    def to_json(self):
+        """Return the data as a JSON string
+        """
+        return json.dumps(self.data, indent=2, sort_keys=True)
 
     def get_csv_filename(self):
         """Return the filename of the CSV

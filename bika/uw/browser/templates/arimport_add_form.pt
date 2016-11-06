@@ -25,7 +25,7 @@
         tal:define="options here/getARImportOptions;
                     options python:options and options or ['c',]">
         <tal:onlyone tal:condition="python:len(options) == 1">
-          <input type="hidden" name="ImportOption" value=""
+          <input type="hidden" name="ImportOption" value="c"
                  tal:attributes="value python:options[0]">
         </tal:onlyone>
       </tal:importoption>
@@ -34,6 +34,14 @@
         <label i18n:translate="label_import_ar_file">Select CSV file</label><br/>
         <input id="arimport_file" type="file" name="csvfile" size="60"/>
       </div>
+
+      <div class="field">
+        <input type="checkbox"
+               name="debug"
+               value="1"/>
+        <label i18n:translate="label_debug">Debug: Display parsed data</label>
+      </div>
+
       <input tabindex=""
              class="context"
              type="submit"
@@ -41,6 +49,8 @@
              value="Import"
              i18n:attributes="value"/>
     </form>
+    <!-- Debug: Displays the parsed data as JSON -->
+    <pre tal:condition="view/parsed_import_data" tal:content="view/parsed_import_data"/>
   </div>
 
 </body>
