@@ -138,6 +138,7 @@ class ClientARImportAddView(BrowserView):
             # <Field ClientBatchComment(text:rw)>,
             ClientBatchComment=_6B,
             # <Field ClientPONumber(string:rw)>,
+            ClientPONumber=_2F,
             # <Field ReturnSampleToClient(boolean:rw)>,
             ReturnSampleToClient=_4F,
             # <Field SampleSite(string:rw)>,
