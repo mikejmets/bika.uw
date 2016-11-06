@@ -107,41 +107,131 @@ class ClientARImportAddView(BrowserView):
         # File name, Client name, Client ID, Contact, Client Order Number, Client Reference
         _2B, _2C, _2D, _2E, _2F, _2G = import_data.get_data("header")
 
-        # List of sample data rows (lists)
-        sample_data = import_data.get_sample_data()
+        # title, BatchID, description, ClientBatchID, ReturnSampleToClient
+        _4B, _4C, _4D, _4E, _4F = import_data.get_data("batch_header")
+
+        # Client Comment, Lab Comment
+        _6B, _6C = import_data.get_data("batch_meta")
+
+        # DateSampled, Media, SamplePoint, Activity Sampled
+        _10B, _10C, _10D, _10E = import_data.get_data("samples_meta")
 
         # Create an ARImport object
         arimport = self.create_ar_import_obj(
             folder=client,
-            title=_2B,
-            FileName=_2C,
-            ClientTitle=_2D,
-            ClientID=_2E,
-            ClientOrderNumber=_2F,
-            ClientReference=_2G,
-            NumberSamples=len(sample_data),
+            title=import_data.get_csv_filename())
+        arimport.unmarkCreationFlag()
+        arimport.edit(
+            # description(text:rw)
+            description=_4D,
+            # FileName(string:rw)
+            FileName=_2B,
+            # OriginalFile(file:rw)
+            OriginalFile=csvfile,
+            # ClientTitle(string:rw)
+            ClientTitle=_2C,
+            # ClientPhone(string:rw)
+            ClientPhone="",
+            # ClientFax(string:rw)
+            ClientFax="",
+            # ClientAddress(string:rw)
+            ClientAddress="",
+            # ClientCity(string:rw)
+            ClientCity="",
+            # ClientID(string:rw)
+            ClientID=_2D,
+            # ContactID(string:rw)
+            ContactID="",
+            # ContactName(string:rw)
+            ContactName=_2E,
+            # Contact(reference:rw)
+            Contact=None,
+            # ClientEmail(string:rw)
+            ClientEmail="",
+            # CCContactID(string:rw)
+            CCContactID="",
+            # CCContact(reference:rw)
+            CCContact="",
+            # CCNamesReport(string:rw)
+            CCNamesReport="",
+            # CCEmailsReport(string:rw)
+            CCEmailsReport="",
+            # CCEmailsInvoice(string:rw)
+            CCEmailsInvoice="",
+            # OrderID(string:rw)
+            OrderID=_4E,
+            # QuoteID(string:rw)
+            QuoteID="",
+            # SamplePoint(string:rw)
+            SamplePoint=_10D,
+            # Temperature(string:rw)
+            Temperature="",
+            # DateImported(datetime:rw)
             DateImported=DateTime(),
-            Analyses=import_data.get_data("samples_meta"),
+            # DateApplied(datetime:rw)
+            DateApplied=None,
+            # NumberSamples(integer:rw)
+            NumberSamples=None,
+            # Status(boolean:rw)
+            Status=False,
+            # Remarks(lines:rw)
+            Remarks=[],
+            # Analyses(lines:rw)
+            Analyses=[],
+            # Priority(reference:rw)>
+            Priority=None,
         )
 
-        # DateSampled, Media, SamplePoint, Activity Sampled
-        _10B, _10C, _10D, _10E = import_data.get_data("samples_meta")
+        # List of sample data rows (lists)
+        sample_data = import_data.get_sample_data()
 
         for n, sample in enumerate(sample_data):
 
             # ClientSampleID, Amount Sampled, Metric, Remarks
             _xB, _xC, _xD, _xE = sample
 
-            aritem = self.create_ar_import_item_obj(
-                folder=arimport,
+            aritem = self.create_ar_import_item_obj(folder=arimport)
+            aritem.unmarkCreationFlag()
+            aritem.edit(
+                # SampleName(string:rw)
+                SampleName="",
+                # ClientRef(string:rw)
+                ClientRef="",
+                # ClientRemarks(string:rw)
+                ClientRemarks="",
+                # ClientSid(string:rw)
                 ClientSid=_xB,
+                # SampleType(string:rw)
+                SampleType="",
+                # SampleDate(string:rw)
+                SampleDate=_10B,
+                # NoContainers(string:rw)
+                NoContainers="",
+                # SampleMatrix(string:rw)
+                SampleMatrix="",
+                # PickingSlip(string:rw)
+                PickingSlip="",
+                # ContainerType(string:rw)
+                ContainerType="",
+                # ReportDryMatter(string:rw)
+                ReportDryMatter="",
+                # Priority(string:rw)
+                Priority="",
+                # AnalysisProfile(lines:rw)
+                AnalysisProfile=[],
+                # Analyses(lines:rw)
+                Analyses=[],
+                # Remarks(lines:rw)
+                Remarks=[_xE],
+                # AnalysisRequest(reference:rw)
+                AnalysisRequest=None,
+                # Sample(reference:rw)>
+                Sample=None,
             )
-            aritem.setAnalyses(sample)
 
             # progress
             self.progressbar_progress(n, len(sample_data))
 
-        arimport._renameAfterCreation()
         return arimport, "Success"
 
     def create_ar_import_item_obj(self, folder=None, id=None, title=None, **kwargs):
@@ -150,7 +240,7 @@ class ClientARImportAddView(BrowserView):
         if id is None:
             id = '%s_%s' % ('aritem', tmpID())
         obj = _createObjectByType("ARImportItem", folder, id, title=title, **kwargs)
-        # obj._renameAfterCreation()
+        obj._renameAfterCreation()
         # obj.unmarkCreationFlag()
         return obj
 
@@ -165,7 +255,7 @@ class ClientARImportAddView(BrowserView):
             title = '%s-%s' % (title, postfix)
             postfix += 1
         obj = _createObjectByType("ARImport", folder, id, title=title, **kwargs)
-        # obj._renameAfterCreation()
+        obj._renameAfterCreation()
         # obj.unmarkCreationFlag()
         return obj
 
@@ -317,8 +407,8 @@ class ImportData(UserDict):
 
         # Validate the filename
         # XXX: Why do we need to do this?
-        csv_filename = self.get_csv_filename()
-        data_filename = self.get_data_filename()
+        csv_filename = str(self.get_csv_filename())
+        data_filename = str(self.get_data_filename())
 
         if csv_filename.lower() != data_filename.lower():
             return "Filename '{0}' does not match entered filename '{1}'".format(
