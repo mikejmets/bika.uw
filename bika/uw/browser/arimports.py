@@ -259,7 +259,7 @@ class ClientARImportAddView(BrowserView):
                 SampleType=self.get_sample_type_by_name(_10C),
                 #  <Field SampleTypeTitle(computed:r)>,
                 #  <Field SamplePoint(reference:rw)>,
-                SamplePoint=_10D,
+                SamplePoint=self.get_sample_point_by_name(_10D),
                 #  <Field SamplePointTitle(computed:r)>,
                 #  <Field SampleMatrix(reference:rw)>,
                 #  <Field StorageLocation(reference:rw)>,
@@ -305,17 +305,43 @@ class ClientARImportAddView(BrowserView):
                 #  <Field SampleTemperature(string:rw)>
             )
 
+            # Create the Sample
             sample = self.get_sample_by_name(client, _xA)
             if sample is None:
                 sample = self.create_object("Sample", client, **sample_data)
             sample.edit(**sample_data)
-
             self.sample_wf(sample)
+
+            # Create a SamplePartition
+            part = sample.contentValues()
+            if not part:
+                part = self.create_object('SamplePartition', sample, 'part-1')
+            else:
+                part = part[0]
+            self.sample_wf(part)
+
+            # Create an AnalysisRequest
+            ar = self.get_ar_by_sample(client, sample)
+            if not ar:
+                ar = self.create_object('AnalysisRequest', client, Sample=sample, **sample_data)
+            ar.setSample(sample)
+            ar.setBatch(batch)
+            ar.edit(**sample_data)
+            self.sample_wf(ar)
 
             # progress
             self.progressbar_progress(n, len(samples))
 
         return batch, "Success"
+
+    def get_ar_by_sample(self, client, sample):
+        """Get the AR object by sample
+        """
+        ar = [x for x in client.objectValues('AnalysisRequest')
+              if x.getSampleUID() == sample.UID()]
+        if ar:
+            return ar[0]
+        return None
 
     def sample_wf(self, sample):
         if self.portal_workflow.getTransitionsFor(sample):
@@ -350,6 +376,15 @@ class ClientARImportAddView(BrowserView):
         """
         results = self.bika_setup_catalog(
             dict(portal_type="SampleType", title=name))
+        if results:
+            return results[0].getObject()
+        return None
+
+    def get_sample_point_by_name(self, name):
+        """Get the sample type object by name
+        """
+        results = self.bika_setup_catalog(
+            dict(portal_type="SamplePoint", title=name))
         if results:
             return results[0].getObject()
         return None
