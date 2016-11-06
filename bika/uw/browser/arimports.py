@@ -4,7 +4,6 @@ import os
 import csv
 import types
 import json
-from urlparse import urljoin
 from UserDict import UserDict
 
 from DateTime import DateTime
@@ -25,6 +24,7 @@ from Products.Archetypes.event import ObjectInitializedEvent
 from Products.statusmessages.interfaces import IStatusMessage
 from Products.CMFPlone.utils import transaction_note
 from Products.CMFPlone.utils import _createObjectByType
+from Products.CMFCore.utils import getToolByName
 
 from bika.lims.utils import tmpID
 from bika.lims.browser import BrowserView
@@ -39,6 +39,8 @@ class ClientARImportAddView(BrowserView):
 
     def __init__(self, context, request):
         super(ClientARImportAddView, self).__init__(context, request)
+        self.bika_setup = getToolByName(context, "bika_setup")
+        self.portal_workflow = getToolByName(context, "portal_workflow")
         self.context = context
         self.request = request
 
@@ -47,6 +49,7 @@ class ClientARImportAddView(BrowserView):
 
         if self.form_get('submitted'):
             csvfile = self.form_get('csvfile')
+            # client_id = self.form_get('ClientID')
             debug_mode = self.form_get('debug')
 
             if debug_mode == "1":
@@ -54,15 +57,21 @@ class ClientARImportAddView(BrowserView):
 
             obj, msg = self._import_file(csvfile)
             if obj:
-                msg = "Import complete"
+                logger.info(msg)
                 self.statusmessage(_(msg), "info")
-                url = obj.absolute_url()
+                url = self.urljoin(self.context.absolute_url(), "samples")
             else:
+                logger.error(msg)
                 self.statusmessage(_(msg), "error")
-                url = urljoin(self.context.absolute_url(), "arimport_add")
+                url = self.urljoin(self.context.absolute_url(), "arimport_add")
             return self.redirect(url)
 
         return self.template()
+
+    def urljoin(self, *args):
+        """simple urljoin
+        """
+        return "/".join(args)
 
     def parsed_import_data(self):
         """Return the parsed data as JSON
@@ -76,14 +85,11 @@ class ClientARImportAddView(BrowserView):
     def redirect(self, url):
         """Write a redirect JavaScript to the given URL
         """
-        self.request.response.write("<script>document.location.href='{0}'</script>".format(url))
+        return self.request.response.write("<script>document.location.href='{0}'</script>".format(url))
 
     def _import_file(self, csvfile):
         """Import the CSV file.
         """
-        # Initialize the Progress Bar
-        self.progressbar_init("Importing File")
-
         # parse the CSV data into the interanl data structure
         import_data = ImportData(csvfile)
 
@@ -112,6 +118,19 @@ class ClientARImportAddView(BrowserView):
         _6B, _6C = import_data.get_data("batch_meta")
         # DateSampled, Media, SamplePoint, Activity Sampled
         _10B, _10C, _10D, _10E = import_data.get_data("samples_meta")
+
+        # Without a valid Sample Type we can not add Samples
+        # Traceback:
+        #     Module bika.uw.browser.arimports, line 338, in create_object
+        #     Module bika.lims.content.sample, line 628, in _renameAfterCreation
+        #     Module bika.lims.idserver, line 29, in renameAfterCreation
+        #     Module bika.lims.idserver, line 153, in generateUniqueId
+        #     AttributeError: 'NoneType' object has no attribute 'getPrefix'
+        sample_type = self.get_sample_type_by_name(_10C)
+        if sample_type is None:
+            msg = "Could not find Sample Type {0} - Aborting.".format(_10C)
+            transaction_note(msg)
+            return None, msg
 
         batch_data = dict(
             # <Field id(string:rw)>,
@@ -209,27 +228,112 @@ class ClientARImportAddView(BrowserView):
             if existing_batch:
                 batch = existing_batch[0]
 
+        # Create a new Batch
         if batch is None:
-            # Create a Batch Object
-            batch = self.create_object("Batch", folder=client, **batch_data)
+            batch = self.create_object("Batch", client, **batch_data)
 
         # Add the data
         batch.edit(**batch_data)
 
-        # List of sample data rows (lists)
-        sample_data = import_data.get_sample_data()
+        # Create the Samples
+        samples = import_data.get_sample_data()
 
-        for n, sample in enumerate(sample_data):
+        # Initialize the Progress Bar
+        self.progressbar_init("Importing File")
+
+        for n, data in enumerate(samples):
 
             # ClientSampleID, Amount Sampled, Metric, Remarks
-            _xB, _xC, _xD, _xE = sample
+            _xA, _xB, _xC, _xD, _xE = data
 
-            # sample = self.create_object("Sample", folder=client)
+            sample_data = dict(
+                #  <Field id(string:rw)>,
+                title=_xA,
+                #  <Field description(text:rw)>,
+                #  <Field SampleID(string:rw)>,
+                #  <Field ClientReference(string:rw)>,
+                #  <Field ClientSampleID(string:rw)>,
+                ClientSampleID=_xB,
+                #  <Field LinkedSample(reference:rw)>,
+                #  <Field SampleType(reference:rw)>,
+                SampleType=self.get_sample_type_by_name(_10C),
+                #  <Field SampleTypeTitle(computed:r)>,
+                #  <Field SamplePoint(reference:rw)>,
+                SamplePoint=_10D,
+                #  <Field SamplePointTitle(computed:r)>,
+                #  <Field SampleMatrix(reference:rw)>,
+                #  <Field StorageLocation(reference:rw)>,
+                #  <Field SamplingWorkflowEnabled(boolean:rw)>,
+                #  <Field DateSampled(datetime:rw)>,
+                DateSampled=DateTime(_10B),
+                #  <Field Sampler(string:rw)>,
+                #  <Field SamplingDate(datetime:rw)>,
+                #  <Field PreparationWorkflow(string:rw)>,
+                #  <Field SamplingDeviation(reference:rw)>,
+                #  <Field SampleCondition(reference:rw)>,
+                #  <Field DateReceived(datetime:rw)>,
+                #  <Field ClientUID(computed:r)>,
+                #  <Field SampleTypeUID(computed:r)>,
+                #  <Field SamplePointUID(computed:r)>,
+                #  <Field Composite(boolean:rw)>,
+                #  <Field DateExpired(datetime:rw)>,
+                #  <Field DisposalDate(computed:r)>,
+                #  <Field DateDisposed(datetime:rw)>,
+                #  <Field AdHoc(boolean:rw)>,
+                #  <Field Remarks(text:rw)>,
+                Remarks=_xE,
+                #  <Field ClientSampleComment(text:rw)>,
+                #  <Field AmountSampled(string:rw)>,
+                AmountSampled=_xC,
+                #  <Field AmountSampledMetric(string:rw)>,
+                AmountSampledMetric=_xD,
+                #  <Field ExceptionalHazards(text:rw)>,
+                #  <Field SampleSite(string:rw)>,
+                #  <Field allowDiscussion(boolean:rw)>,
+                #  <Field subject(lines:rw)>,
+                #  <Field location(string:rw)>,
+                #  <Field contributors(lines:rw)>,
+                #  <Field creators(lines:rw)>,
+                #  <Field effectiveDate(datetime:rw)>,
+                #  <Field expirationDate(datetime:rw)>,
+                #  <Field language(string:rw)>,
+                #  <Field rights(text:rw)>,
+                #  <Field creation_date(datetime:rw)>,
+                #  <Field modification_date(datetime:rw)>,
+                #  <Field ReturnSampleToClient(boolean:rw)>,
+                #  <Field Hazardous(boolean:rw)>,
+                #  <Field SampleTemperature(string:rw)>
+            )
+
+            sample = self.get_sample_by_name(client, _xA)
+            if sample is None:
+                sample = self.create_object("Sample", client, **sample_data)
+            sample.edit(**sample_data)
+
+            self.sample_wf(sample)
 
             # progress
-            self.progressbar_progress(n, len(sample_data))
+            self.progressbar_progress(n, len(samples))
 
         return batch, "Success"
+
+    def sample_wf(self, sample):
+        if self.portal_workflow.getTransitionsFor(sample):
+            return
+        swe = self.bika_setup.getSamplingWorkflowEnabled()
+        if swe:
+            self.portal_workflow.doActionFor(sample, 'sampling_workflow')
+        else:
+            self.portal_workflow.doActionFor(sample, 'no_sampling_workflow')
+
+    def get_sample_by_name(self, client, name):
+        """Get the sample object by name
+        """
+        sample = [x for x in client.objectValues('Sample')
+                  if x.title == name]
+        if sample:
+            return sample[0]
+        return None
 
     def get_contact_by_name(self, client, name):
         """Get the contact object by name
@@ -241,15 +345,27 @@ class ClientARImportAddView(BrowserView):
 
         return None
 
-    def create_object(self, content_type, folder=None, id=None, **kwargs):
+    def get_sample_type_by_name(self, name):
+        """Get the sample type object by name
+        """
+        results = self.bika_setup_catalog(
+            dict(portal_type="SampleType", title=name))
+        if results:
+            return results[0].getObject()
+        return None
+
+    def create_object(self, content_type, container, id=None, **kwargs):
         """Create a new ARImportItem object by type
         """
         if id is None:
             id = tmpID()
-        obj = _createObjectByType(content_type, folder, id)
-        obj.processForm()
+        logger.info("Creating Content {0} in Container {1} with ID {2}".format(
+            content_type, container, id))
+        obj = _createObjectByType(content_type, container, id)
+        obj.unmarkCreationFlag()
         obj.edit(**kwargs)
         obj._renameAfterCreation()
+        obj.processForm()
         notify(ObjectInitializedEvent(obj))
         obj.at_post_create_script()
         return obj
@@ -350,8 +466,9 @@ class ImportData(UserDict):
             # data dict, e.g. Batch Header -> batch_header
             identifier = row[0].replace(" ", "_").lower()
 
-            # get the row data (column 1 to the end of the line per default)
-            row_data = self.get_row_data(row)
+            # get the row data (column 0 to the end for samples, column 1 to the end for the rest)
+            start = (section != "samples") and 1 or 0
+            row_data = self.get_row_data(row, start=start)
 
             # skip empty cells
             if row_data is None:
