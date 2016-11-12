@@ -37,9 +37,10 @@
 
       <div class="field">
         <input type="checkbox"
-               name="debug"
+               name="check"
+               tal:attributes="checked request/form/debug|nothing"
                value="1"/>
-        <label i18n:translate="label_debug">Debug: Display parsed data</label>
+        <label i18n:translate="label_debug">Check Import Data</label>
       </div>
 
       <input tabindex=""
@@ -49,8 +50,9 @@
              value="Import"
              i18n:attributes="value"/>
     </form>
-    <!-- Debug: Displays the parsed data as JSON -->
-    <pre tal:condition="view/parsed_import_data" tal:content="view/parsed_import_data"/>
+    <div id="importdata">
+      <pre tal:condition="view/data|nothing" tal:content="view/data|nothing"/>
+    </div>
   </div>
 
 </body>

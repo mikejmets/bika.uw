@@ -2,8 +2,9 @@
 
 import os
 import csv
-import types
 import json
+import types
+import pprint
 from UserDict import UserDict
 
 from DateTime import DateTime
@@ -43,26 +44,33 @@ class ClientARImportAddView(BrowserView):
         self.portal_workflow = getToolByName(context, "portal_workflow")
         self.context = context
         self.request = request
+        self.data = None
 
     def __call__(self):
         CheckAuthenticator(self.request.form)
 
         if self.form_get('submitted'):
             csvfile = self.form_get('csvfile')
-            # client_id = self.form_get('ClientID')
-            debug_mode = self.form_get('debug')
+            check_mode = self.form_get('check')
 
-            if debug_mode == "1":
+            if check_mode == "1":
+                data = self.parsed_import_data()
+                valid = data["valid"]
+                errors = "\n".join(data["errors"])
+                if valid:
+                    self.statusmessage("Import Data Valid", "info")
+                else:
+                    self.statusmessage(errors, "error")
+                self.data = pprint.pformat(data)
                 return self.template()
 
-            obj, msg = self._import_file(csvfile)
-            if obj:
-                logger.info(msg)
-                self.statusmessage(_(msg), "info")
+            data = self._import_file(csvfile)
+            if data["success"]:
+                self.statusmessage(_("Import Successful"), "info")
                 url = self.urljoin(self.context.absolute_url(), "samples")
             else:
-                logger.error(msg)
-                self.statusmessage(_(msg), "error")
+                errors = "\n".join(data["errors"])
+                self.statusmessage(_(errors), "error")
                 url = self.urljoin(self.context.absolute_url(), "arimport_add")
             return self.redirect(url)
 
@@ -73,41 +81,63 @@ class ClientARImportAddView(BrowserView):
         """
         return "/".join(args)
 
-    def parsed_import_data(self):
+    def check_import_data(self):
         """Return the parsed data as JSON
         """
         csvfile = self.form_get('csvfile')
-        if csvfile:
-            import_data = ImportData(csvfile)
-            return import_data.to_json()
-        return None
+        if not csvfile:
+            return None
+        data = self._prepare_import_data(csvfile)
+        return data
 
     def redirect(self, url):
         """Write a redirect JavaScript to the given URL
         """
         return self.request.response.write("<script>document.location.href='{0}'</script>".format(url))
 
-    def _import_file(self, csvfile):
-        """Import the CSV file.
+    def _prepare_import_data(self, csvfile):
+        """Prepare data for import
+
+            - Checks data integrity
+            - Extracts the known fields from the Spreadsheet
+            - Maps Spreadsheet fields to Schema names
+            - Fetch objects if they exist
         """
+        _data = {
+            "valid": True,
+            "errors": [],
+        }
 
         # parse the CSV data into the interanl data structure
         import_data = ImportData(csvfile)
+        _data["import_data"] = import_data
+
+        # remember the csvfile
+        _data["csvfile"] = csvfile
 
         # Validate the import data
         valid = import_data.validate()
         if type(valid) in types.StringTypes:
-            transaction_note(valid)
-            return None, valid
+            _data["valid"] = False
+            _data["errors"].append(valid)
 
-        # XXX: Why do we have to do this?
-        #      Are we not always in a client folder
+        # Client Handling
         client_id = self.form_get("ClientID")
         client = self.get_client_by_id(client_id)
         if client is None:
-            # This is not a user input issue - client_id is added to template
-            return None, "Could not find Client {0}".format(client_id)
+            _data["valid"] = False
+            msg = "Could not find Client {0}".format(client_id)
+            _data["errors"].append(msg)
 
+        # Store the client data to the output data
+        _data["client"] = {
+            "id": client_id,
+            "title": client and client.Title() or "Client not Found",
+            "obj": client,
+        }
+
+        # Parse the known fields from the Spreadsheet
+        #
         # Note: The variable names refer to the spreadsheet cells, e.g.:
         #       _2B is the cell at column B row 2.
         #
@@ -120,37 +150,31 @@ class ClientARImportAddView(BrowserView):
         # DateSampled, Media, SamplePoint, Activity Sampled
         _10B, _10C, _10D, _10E = import_data.get_data("samples_meta")[:4]
 
-        # List of profile/service identifiers to search for
-        _analytes = import_data.get_analytes_data()
-
-        profiles = filter(lambda x: x is not None,
-                          map(self.get_profile_by_value, _analytes))
-        services = filter(lambda x: x is not None,
-                          map(self.get_service_by_value, _analytes))
-
-        # Create a list of the AnalysisService UIDs from the profiles and services
-        _analyses = set()
-        for profile in profiles:
-            for service in profile.getService():
-                _analyses.add(service.UID())
-        for service in services:
-            _analyses.add(service.UID())
-        analyses = list(_analyses)
-
-        # Without a valid Sample Type we can not add Samples
-        # Traceback:
-        #     Module bika.uw.browser.arimports, line 338, in create_object
-        #     Module bika.lims.content.sample, line 628, in _renameAfterCreation
-        #     Module bika.lims.idserver, line 29, in renameAfterCreation
-        #     Module bika.lims.idserver, line 153, in generateUniqueId
-        #     AttributeError: 'NoneType' object has no attribute 'getPrefix'
+        # Check for valid sample Type
         sample_type = self.get_sample_type_by_name(_10C)
         if sample_type is None:
+            _data["valid"] = False
             msg = "Could not find Sample Type {0} - Aborting.".format(_10C)
-            transaction_note(msg)
-            return None, msg
+            _data["errors"].append(msg)
 
-        batch_data = dict(
+        # Store the sample type to the output data
+        _data["sample_type"] = {
+            "title": _10C,
+            "obj": sample_type
+        }
+
+        #
+        # Batch Handling
+        #
+        batch_title = _4B
+        batch_obj = None
+        if batch_title:
+            existing_batch = [x for x in client.objectValues('Batch')
+                              if x.title == batch_title]
+            if existing_batch:
+                batch_obj = existing_batch[0]
+
+        batch_fields = dict(
             # <Field id(string:rw)>,
             # <Field BatchID(string:rw)>,
             BatchID=_4C,
@@ -237,34 +261,65 @@ class ClientARImportAddView(BrowserView):
             # <Field DateOfRetractions(lines:rw)>
         )
 
-        # Check if the batch already exists
-        batch_title = _4B
-        batch = None
-        if batch_title:
-            existing_batch = [x for x in client.objectValues('Batch')
-                              if x.title == batch_title]
-            if existing_batch:
-                batch = existing_batch[0]
+        # Save the Batch for the output data
+        _data["batch"] = {
+            "title": batch_title,
+            "obj": batch_obj,
+            "batch_fields": batch_fields,
+        }
 
-        # Create a new Batch
-        if batch is None:
-            batch = self.create_object("Batch", client, **batch_data)
+        # List of profile/service identifiers to search for
+        _analytes = import_data.get_analytes_data()
 
-        # Add the data
-        batch.edit(**batch_data)
+        profiles = filter(lambda x: x is not None,
+                          map(self.get_profile_by_value, _analytes))
+        services = filter(lambda x: x is not None,
+                          map(self.get_service_by_value, _analytes))
 
-        # Create the Samples
+        # Create a list of the AnalysisServices from the profiles and services
+        _analyses = set()
+        for profile in profiles:
+            for service in profile.getService():
+                _analyses.add(service)
+        for service in services:
+            _analyses.add(service)
+        analyses = list(_analyses)
+
+        # Store the profiles to the output data
+        _data["profiles"] = []
+        for profile in profiles:
+            _data["profiles"].append({
+                "title": profile.Title(),
+                "obj": profile
+            })
+
+        # Store the services to the output data
+        _data["services"] = []
+        for service in services:
+            _data["services"].append({
+                "title": service.Title(),
+                "obj": service
+            })
+
+        # Store the Analysis to the output data
+        _data["analyses"] = []
+        for analysis in analyses:
+            _data["analyses"].append({
+                "title": analysis.Title(),
+                "obj": analysis
+            })
+
+        #
+        # AR Handling
+        #
+        _data["analysisrequests"] = []
         samples = import_data.get_sample_data()
-
-        # Initialize the Progress Bar
-        self.progressbar_init("Importing File")
-
-        for n, data in enumerate(samples):
+        for n, item in enumerate(samples):
 
             # ClientSampleID, Amount Sampled, Metric, Remarks
-            _xB, _xC, _xD, _xE = data[:4]
+            _xB, _xC, _xD, _xE = item[:4]
 
-            sample_data = dict(
+            sample_fields = dict(
                 #  <Field id(string:rw)>,
                 #  <Field description(text:rw)>,
                 #  <Field SampleID(string:rw)>,
@@ -322,11 +377,60 @@ class ClientARImportAddView(BrowserView):
                 #  <Field SampleTemperature(string:rw)>
             )
 
-            # Create the Sample
+            _item = {}
+            _item["analyses"] = map(lambda an: an.UID(), analyses)
+            _item["sample_fields"] = sample_fields
+
             sample = self.get_sample_by_sid(client, _xB)
+            ar = self.get_ar_by_sample(client, sample)
+
+            _item["analysisrequest_obj"] = ar
+            _item["sample_obj"] = sample
+
+            _data["analysisrequests"].append(_item)
+
+        return _data
+
+    def _import_file(self, csvfile):
+        """Import the CSV file.
+        """
+        # get the import data
+        import_data = self._prepare_import_data(csvfile)
+
+        # Import success: switch on errors
+        import_data["success"] = True
+
+        if import_data["valid"] is False:
+            import_data["success"] = False
+            return import_data
+
+        #
+        # Data seems valid - importing
+        #
+
+        # Initialize the Progress Bar
+        self.progressbar_init("Importing File")
+
+        # get the client object
+        client = import_data["client"]["obj"]
+
+        # get the batch object
+        batch = import_data["batch"]["obj"]
+        batch_fields = import_data["batch"]["batch_fields"]
+        if batch is None:
+            # create a new batch
+            batch = self.create_object("Batch", client, **batch_fields)
+        batch.edit(**batch_fields)
+
+        # Create ARs, Samples, Analyses and Sample Partitions
+        ar_items = import_data["analysisrequests"]
+        for n, item in enumerate(ar_items):
+            sample = item["sample_obj"]
+            sample_fields = item["sample_fields"]
             if sample is None:
-                sample = self.create_object("Sample", client, **sample_data)
-            sample.edit(**sample_data)
+                # create a new sample
+                sample = self.create_object("Sample", client, **sample_fields)
+            sample.edit(**sample_fields)
             self.sample_wf(sample)
 
             # Create a SamplePartition
@@ -338,26 +442,28 @@ class ClientARImportAddView(BrowserView):
             self.sample_wf(part)
 
             # Create an AnalysisRequest
-            ar = self.get_ar_by_sample(client, sample)
+            ar = item["analysisrequest_obj"]
             if not ar:
-                ar = self.create_object('AnalysisRequest', client, Sample=sample, **sample_data)
+                # create a new AR
+                ar = self.create_object('AnalysisRequest', client, Sample=sample.UID(), **sample_fields)
+            # set the Sample
             ar.setSample(sample)
+            # set the batch
             ar.setBatch(batch)
-            logger.info("Set Analyses {0}".format(analyses))
-            ar.edit(**sample_data)
-            self.sample_wf(ar)
-
             # Set the list of AnalysisServices
+            analyses = item["analyses"]
             ar.setAnalyses(analyses)
             for analysis in ar.getAnalyses(full_objects=True):
-                logger.info("Set Sample Partition for {0}".format(analysis.Title()))
                 analysis.setSamplePartition(part)
+            # Update the data
+            ar.edit(**sample_fields)
+            # set the workflow
+            self.sample_wf(ar)
 
-            ar.reindexObject()
             # progress
-            self.progressbar_progress(n, len(samples))
+            self.progressbar_progress(n, len(ar_items))
 
-        return batch, "Success"
+        return import_data
 
     def get_profile_by_value(self, value):
         """Serarch a Profile by the given value and return the object of the
