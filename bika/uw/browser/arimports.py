@@ -90,6 +90,7 @@ class ClientARImportAddView(BrowserView):
     def _import_file(self, csvfile):
         """Import the CSV file.
         """
+
         # parse the CSV data into the interanl data structure
         import_data = ImportData(csvfile)
 
@@ -111,13 +112,30 @@ class ClientARImportAddView(BrowserView):
         #       _2B is the cell at column B row 2.
         #
         # File name, Client name, Client ID, Contact, Client Order Number, Client Reference
-        _2B, _2C, _2D, _2E, _2F, _2G = import_data.get_data("header")
+        _2B, _2C, _2D, _2E, _2F, _2G = import_data.get_data("header")[:6]
         # title, BatchID, description, ClientBatchID, ReturnSampleToClient
-        _4B, _4C, _4D, _4E, _4F = import_data.get_data("batch_header")
+        _4B, _4C, _4D, _4E, _4F = import_data.get_data("batch_header")[:5]
         # Client Comment, Lab Comment
-        _6B, _6C = import_data.get_data("batch_meta")
+        _6B, _6C = import_data.get_data("batch_meta")[:2]
         # DateSampled, Media, SamplePoint, Activity Sampled
-        _10B, _10C, _10D, _10E = import_data.get_data("samples_meta")
+        _10B, _10C, _10D, _10E = import_data.get_data("samples_meta")[:4]
+
+        # List of profile/service identifiers to search for
+        _analytes = import_data.get_analytes_data()
+
+        profiles = filter(lambda x: x is not None,
+                          map(self.get_profile_by_value, _analytes))
+        services = filter(lambda x: x is not None,
+                          map(self.get_service_by_value, _analytes))
+
+        # Create a list of the AnalysisService UIDs from the profiles and services
+        _analyses = set()
+        for profile in profiles:
+            for service in profile.getService():
+                _analyses.add(service.UID())
+        for service in services:
+            _analyses.add(service.UID())
+        analyses = list(_analyses)
 
         # Without a valid Sample Type we can not add Samples
         # Traceback:
@@ -244,11 +262,10 @@ class ClientARImportAddView(BrowserView):
         for n, data in enumerate(samples):
 
             # ClientSampleID, Amount Sampled, Metric, Remarks
-            _xA, _xB, _xC, _xD, _xE = data
+            _xB, _xC, _xD, _xE = data[:4]
 
             sample_data = dict(
                 #  <Field id(string:rw)>,
-                title=_xA,
                 #  <Field description(text:rw)>,
                 #  <Field SampleID(string:rw)>,
                 #  <Field ClientReference(string:rw)>,
@@ -306,7 +323,7 @@ class ClientARImportAddView(BrowserView):
             )
 
             # Create the Sample
-            sample = self.get_sample_by_name(client, _xA)
+            sample = self.get_sample_by_sid(client, _xB)
             if sample is None:
                 sample = self.create_object("Sample", client, **sample_data)
             sample.edit(**sample_data)
@@ -326,13 +343,72 @@ class ClientARImportAddView(BrowserView):
                 ar = self.create_object('AnalysisRequest', client, Sample=sample, **sample_data)
             ar.setSample(sample)
             ar.setBatch(batch)
+            logger.info("Set Analyses {0}".format(analyses))
             ar.edit(**sample_data)
             self.sample_wf(ar)
 
+            # Set the list of AnalysisServices
+            ar.setAnalyses(analyses)
+            for analysis in ar.getAnalyses(full_objects=True):
+                logger.info("Set Sample Partition for {0}".format(analysis.Title()))
+                analysis.setSamplePartition(part)
+
+            ar.reindexObject()
             # progress
             self.progressbar_progress(n, len(samples))
 
         return batch, "Success"
+
+    def get_profile_by_value(self, value):
+        """Serarch a Profile by the given value and return the object of the
+        first found result or None if no results were found.
+
+        Search Precedence:
+            1. Search by Title
+        """
+        # Profiles can be searched by the bika_setup_catalog
+        bsc = self.bika_setup_catalog
+
+        # Precedence of search queries
+        queries = [
+            {"title": value},
+        ]
+        # Return the UID of the first found result.
+        for query in queries:
+            q = {"portal_type": "AnalysisProfile"}
+            q.update(query)
+            results = bsc(q)
+            if len(results) == 0:
+                continue
+            return results[0].getObject()
+        return None
+
+    def get_service_by_value(self, value):
+        """Search a service by the given Value and return the object of the
+        first found result or None if no results were found.
+
+        Search Precedence:
+            1. Search by CAS#
+            2. Search by Title
+            3. Search by Keyword
+        """
+        # Profiles can be searched by the bika_setup_catalog
+        bsc = self.bika_setup_catalog
+
+        # Precedence of search queries
+        queries = [
+            {"title": value},
+            {"getKeyword": value},
+        ]
+        # Return the UID of the first found result.
+        for query in queries:
+            q = {"portal_type": "AnalysisService"}
+            q.update(query)
+            results = bsc(q)
+            if len(results) == 0:
+                continue
+            return results[0].getObject()
+        return None
 
     def get_ar_by_sample(self, client, sample):
         """Get the AR object by sample
@@ -352,11 +428,11 @@ class ClientARImportAddView(BrowserView):
         else:
             self.portal_workflow.doActionFor(sample, 'no_sampling_workflow')
 
-    def get_sample_by_name(self, client, name):
+    def get_sample_by_sid(self, client, sid):
         """Get the sample object by name
         """
         sample = [x for x in client.objectValues('Sample')
-                  if x.title == name]
+                  if x.getClientSampleID() == sid]
         if sample:
             return sample[0]
         return None
@@ -501,9 +577,8 @@ class ImportData(UserDict):
             # data dict, e.g. Batch Header -> batch_header
             identifier = row[0].replace(" ", "_").lower()
 
-            # get the row data (column 0 to the end for samples, column 1 to the end for the rest)
-            start = (section != "samples") and 1 or 0
-            row_data = self.get_row_data(row, start=start)
+            # get the row data
+            row_data = self.get_row_data(row)
 
             # skip empty cells
             if row_data is None:
@@ -579,7 +654,7 @@ class ImportData(UserDict):
     def to_json(self):
         """Return the data as a JSON string
         """
-        return json.dumps(self.data, indent=2, sort_keys=True)
+        return json.dumps(self.data, indent=2, sort_keys=True, ensure_ascii=False)
 
     def get_csv_filename(self):
         """Return the filename of the CSV
@@ -610,3 +685,8 @@ class ImportData(UserDict):
         """Return the data of the "Samples" section
         """
         return self.get_data("samples")
+
+    def get_analytes_data(self):
+        """Return the data of the "Analytes" section
+        """
+        return self.get_data("analytes")
