@@ -54,7 +54,7 @@ class ClientARImportAddView(BrowserView):
             check_mode = self.form_get('check')
 
             if check_mode == "1":
-                data = self.parsed_import_data()
+                data = self.check_import_data()
                 valid = data["valid"]
                 errors = "\n".join(data["errors"])
                 if valid:
