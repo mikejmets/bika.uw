@@ -11,6 +11,9 @@ from DateTime import DateTime
 
 from zope.event import notify
 from zope.interface import implements
+from zope.container.contained import ObjectAddedEvent
+from zope.container.contained import notifyContainerModified
+from zope.lifecycleevent import ObjectCreatedEvent
 
 from plone.app.layout.globals.interfaces import IViewView
 from plone.protect import CheckAuthenticator
@@ -20,8 +23,9 @@ from collective.progressbar.events import ProgressState
 from collective.progressbar.events import UpdateProgressEvent
 from collective.progressbar.events import InitialiseProgressBar
 
-from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+from Products.Archetypes.event import ObjectEditedEvent
 from Products.Archetypes.event import ObjectInitializedEvent
+from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from Products.statusmessages.interfaces import IStatusMessage
 from Products.CMFPlone.utils import transaction_note
 from Products.CMFPlone.utils import _createObjectByType
@@ -403,9 +407,90 @@ class ClientARImportAddView(BrowserView):
                 #  <Field SampleTemperature(string:rw)>
             )
 
+            ar_fields = dict(
+                # <Field id(string:rw)>,
+                # <Field title(string:rw)>,
+                # <Field description(text:rw)>,
+                # <Field RequestID(string:rw)>,
+                # <Field Client(reference:rw)>,
+                Client=client,
+                # <Field Contact(reference:rw)>,
+                Contact=contact,
+                # <Field CCContact(reference:rw)>,
+                # <Field CCEmails(lines:rw)>,
+                # <Field InvoiceContact(reference:rw)>,
+                # <Field Sample(reference:rw)>,
+                # <Field Batch(reference:rw)>,
+                # <Field SubGroup(reference:rw)>,
+                # <Field Template(reference:rw)>,
+                # <Field Profile(reference:rw)>,
+                # <Field DateSampled(datetime:rw)>,
+                # <Field Sampler(string:rw)>,
+                # <Field SamplingDate(datetime:rw)>,
+                # <Field SampleSite(string:rw)>,
+                # <Field SampleType(reference:rw)>,
+                # <Field SampleMatrix(reference:rw)>,
+                # <Field Specification(reference:rw)>,
+                # <Field ResultsRange(analysisspec:rw)>,
+                # <Field PublicationSpecification(reference:rw)>,
+                # <Field SamplePoint(reference:rw)>,
+                # <Field StorageLocation(reference:rw)>,
+                # <Field ClientOrderNumber(string:rw)>,
+                # <Field ClientReference(string:rw)>,
+                # <Field ClientSampleID(string:rw)>,
+                # <Field SamplingDeviation(reference:rw)>,
+                # <Field SampleCondition(reference:rw)>,
+                # <Field DefaultContainerType(reference:rw)>,
+                # <Field AdHoc(boolean:rw)>,
+                # <Field Composite(boolean:rw)>,
+                # <Field ReportDryMatter(boolean:rw)>,
+                # <Field InvoiceExclude(boolean:rw)>,
+                # <Field Analyses(analyses:rw)>,
+                # <Field Attachment(reference:rw)>,
+                # <Field Invoice(reference:rw)>,
+                # <Field DateReceived(datetime:rw)>,
+                # <Field DatePublished(datetime:rw)>,
+                # <Field Remarks(text:rw)>,
+                # <Field MemberDiscount(fixedpoint:rw)>,
+                # <Field ClientUID(computed:r)>,
+                # <Field SampleTypeTitle(computed:r)>,
+                # <Field SamplePointTitle(computed:r)>,
+                # <Field SampleUID(computed:r)>,
+                # <Field SampleID(computed:r)>,
+                # <Field ContactUID(computed:r)>,
+                # <Field ProfileUID(computed:r)>,
+                # <Field Invoiced(computed:r)>,
+                # <Field ChildAnalysisRequest(reference:rw)>,
+                # <Field ParentAnalysisRequest(reference:rw)>,
+                # <Field PreparationWorkflow(string:rw)>,
+                # <Field Priority(reference:rw)>,
+                # <Field ResultsInterpretation(text:rw)>,
+                # <Field allowDiscussion(boolean:rw)>,
+                # <Field subject(lines:rw)>,
+                # <Field location(string:rw)>,
+                # <Field contributors(lines:rw)>,
+                # <Field creators(lines:rw)>,
+                # <Field effectiveDate(datetime:rw)>,
+                # <Field expirationDate(datetime:rw)>,
+                # <Field language(string:rw)>,
+                # <Field rights(text:rw)>,
+                # <Field creation_date(datetime:rw)>,
+                # <Field modification_date(datetime:rw)>,
+                # <Field SampleTemperature(string:rw)>,
+                # <Field ReturnSampleToClient(boolean:rw)>,
+                # <Field Hazardous(boolean:rw)>,
+                # <Field ClientSampleComment(text:rw)>,
+                # <Field ExceptionalHazards(text:rw)>,
+                # <Field NonStandardMethodInstructions(text:rw)>,
+                # <Field ApprovedExceptionsToStandardPractice(text:rw)>,
+                # <Field AmountSampled(string:rw)>,
+                # <Field AmountSampledMetric(string:rw)>
+            )
+
             _item = {}
             _item["analyses"] = map(lambda an: an.UID(), analyses)
             _item["sample_fields"] = sample_fields
+            _item["ar_fields"] = sample_fields
 
             sample = self.get_sample_by_sid(client, _xB)
             ar = self.get_ar_by_sample(client, sample)
@@ -446,7 +531,7 @@ class ClientARImportAddView(BrowserView):
         if batch is None:
             # create a new batch
             batch = self.create_object("Batch", client, **batch_fields)
-        batch.edit(**batch_fields)
+        self.edit(batch, **batch_fields)
 
         # Create ARs, Samples, Analyses and Sample Partitions
         ar_items = import_data["analysisrequests"]
@@ -456,7 +541,7 @@ class ClientARImportAddView(BrowserView):
             if sample is None:
                 # create a new sample
                 sample = self.create_object("Sample", client, **sample_fields)
-            sample.edit(**sample_fields)
+            self.edit(sample, **sample_fields)
             self.sample_wf(sample)
 
             # Create a SamplePartition
@@ -469,9 +554,12 @@ class ClientARImportAddView(BrowserView):
 
             # Create an AnalysisRequest
             ar = item["analysisrequest_obj"]
+            ar_fields = item["ar_fields"]
+            # merge sample fields
+            ar_fields.update(sample_fields)
             if not ar:
                 # create a new AR
-                ar = self.create_object('AnalysisRequest', client, Sample=sample.UID(), **sample_fields)
+                ar = self.create_object('AnalysisRequest', client, Sample=sample.UID(), **ar_fields)
             # set the Sample
             ar.setSample(sample)
             # set the batch
@@ -482,14 +570,44 @@ class ClientARImportAddView(BrowserView):
             for analysis in ar.getAnalyses(full_objects=True):
                 analysis.setSamplePartition(part)
             # Update the data
-            ar.edit(**sample_fields)
+            self.edit(ar, **sample_fields)
             # set the workflow
             self.sample_wf(ar)
 
             # progress
             self.progressbar_progress(n, len(ar_items))
 
+        notifyContainerModified(client)
         return import_data
+
+    def create_object(self, content_type, container, id=None, **kwargs):
+        """Create a new ARImportItem object by type
+        """
+        if id is None:
+            id = tmpID()
+        obj = _createObjectByType(content_type, container, id, **kwargs)
+        # roughly follow the steps of processForm
+        obj._renameAfterCreation()
+        obj.unmarkCreationFlag()
+        notify(ObjectInitializedEvent(obj))
+        obj.at_post_create_script()
+        # obj.processForm()
+        # obj.edit(**kwargs)
+        notify(ObjectCreatedEvent(obj))
+        notify(ObjectAddedEvent(obj, container, obj.id))
+        notifyContainerModified(container)
+        logger.info("Created Content {0} in Container {1} with ID {2}".format(
+            content_type, container, obj.id))
+        return obj
+
+    def edit(self, obj, **kwargs):
+        """Edit the object with the given data
+        """
+        obj.edit(**kwargs)
+        notify(ObjectEditedEvent(obj))
+        logger.info("Edited Content {0} with data {1}".format(
+            obj.id, kwargs))
+        return obj
 
     def get_profile_by_value(self, value):
         """Serarch a Profile by the given value and return the object of the
@@ -596,22 +714,6 @@ class ClientARImportAddView(BrowserView):
         if results:
             return results[0].getObject()
         return None
-
-    def create_object(self, content_type, container, id=None, **kwargs):
-        """Create a new ARImportItem object by type
-        """
-        if id is None:
-            id = tmpID()
-        logger.info("Creating Content {0} in Container {1} with ID {2}".format(
-            content_type, container, id))
-        obj = _createObjectByType(content_type, container, id)
-        obj.unmarkCreationFlag()
-        obj.edit(**kwargs)
-        obj._renameAfterCreation()
-        obj.processForm()
-        notify(ObjectInitializedEvent(obj))
-        obj.at_post_create_script()
-        return obj
 
     def progressbar_init(self, title):
         """Progress Bar
