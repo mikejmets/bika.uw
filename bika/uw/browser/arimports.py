@@ -154,13 +154,39 @@ class ClientARImportAddView(BrowserView):
         sample_type = self.get_sample_type_by_name(_10C)
         if sample_type is None:
             _data["valid"] = False
-            msg = "Could not find Sample Type {0} - Aborting.".format(_10C)
+            msg = "Could not find Sample Type '{0}.'".format(_10C)
             _data["errors"].append(msg)
 
         # Store the sample type to the output data
         _data["sample_type"] = {
             "title": _10C,
             "obj": sample_type
+        }
+
+        # Check for valid sample point
+        sample_point=self.get_sample_point_by_name(_10D)
+        if sample_point is None:
+            _data["valid"] = False
+            msg = "Could not find Sample Point '{0}'.".format(_10D)
+            _data["errors"].append(msg)
+
+        # Store the sample point to the output data
+        _data["sample_point"] = {
+            "title": _10D,
+            "obj": sample_point
+        }
+
+        # Check for valid Contact
+        contact = self.get_contact_by_name(client, _2E)
+        if contact is None:
+            _data["valid"] = False
+            msg = "Could not find Contact '{0}'.".format(_2E)
+            _data["errors"].append(msg)
+
+        # Store the Contact to the output data
+        _data["contact"] = {
+            "title": _2E,
+            "obj": contact,
         }
 
         #
@@ -192,7 +218,7 @@ class ClientARImportAddView(BrowserView):
             # <Field ClientBatchID(string:rw)>,
             ClientBatchID=_4E,
             # <Field Contact(reference:rw)>,
-            Contact=self.get_contact_by_name(client, _2E),
+            Contact=contact,
             # <Field CCContact(reference:rw)>,
             # <Field CCEmails(lines:rw)>,
             # <Field InvoiceContact(reference:rw)>,
@@ -328,10 +354,10 @@ class ClientARImportAddView(BrowserView):
                 ClientSampleID=_xB,
                 #  <Field LinkedSample(reference:rw)>,
                 #  <Field SampleType(reference:rw)>,
-                SampleType=self.get_sample_type_by_name(_10C),
+                SampleType=sample_type,
                 #  <Field SampleTypeTitle(computed:r)>,
                 #  <Field SamplePoint(reference:rw)>,
-                SamplePoint=self.get_sample_point_by_name(_10D),
+                SamplePoint=sample_point,
                 #  <Field SamplePointTitle(computed:r)>,
                 #  <Field SampleMatrix(reference:rw)>,
                 #  <Field StorageLocation(reference:rw)>,
