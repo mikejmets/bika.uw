@@ -403,6 +403,7 @@ class ClientARImportAddView(BrowserView):
                 #  <Field creation_date(datetime:rw)>,
                 #  <Field modification_date(datetime:rw)>,
                 #  <Field ReturnSampleToClient(boolean:rw)>,
+                ReturnSampleToClient=_4F,
                 #  <Field Hazardous(boolean:rw)>,
                 #  <Field SampleTemperature(string:rw)>
             )
@@ -424,6 +425,7 @@ class ClientARImportAddView(BrowserView):
                 # <Field SubGroup(reference:rw)>,
                 # <Field Template(reference:rw)>,
                 # <Field Profile(reference:rw)>,
+                Profile=profile,
                 # <Field DateSampled(datetime:rw)>,
                 # <Field Sampler(string:rw)>,
                 # <Field SamplingDate(datetime:rw)>,
@@ -478,6 +480,7 @@ class ClientARImportAddView(BrowserView):
                 # <Field modification_date(datetime:rw)>,
                 # <Field SampleTemperature(string:rw)>,
                 # <Field ReturnSampleToClient(boolean:rw)>,
+                ReturnSampleToClient=_4F,
                 # <Field Hazardous(boolean:rw)>,
                 # <Field ClientSampleComment(text:rw)>,
                 # <Field ExceptionalHazards(text:rw)>,
@@ -490,7 +493,7 @@ class ClientARImportAddView(BrowserView):
             _item = {}
             _item["analyses"] = map(lambda an: an.UID(), analyses)
             _item["sample_fields"] = sample_fields
-            _item["ar_fields"] = sample_fields
+            _item["ar_fields"] = ar_fields
 
             sample = self.get_sample_by_sid(client, _xB)
             ar = self.get_ar_by_sample(client, sample)
@@ -541,7 +544,7 @@ class ClientARImportAddView(BrowserView):
             if sample is None:
                 # create a new sample
                 sample = self.create_object("Sample", client, **sample_fields)
-            self.edit(sample, **sample_fields)
+            self.edit(sample, SampleID=sample.id, **sample_fields)
             self.sample_wf(sample)
 
             # Create a SamplePartition
@@ -564,15 +567,15 @@ class ClientARImportAddView(BrowserView):
             ar.setSample(sample)
             # set the batch
             ar.setBatch(batch)
+            # set the workflow
+            self.sample_wf(ar)
             # Set the list of AnalysisServices
             analyses = item["analyses"]
             ar.setAnalyses(analyses)
             for analysis in ar.getAnalyses(full_objects=True):
                 analysis.setSamplePartition(part)
             # Update the data
-            self.edit(ar, **sample_fields)
-            # set the workflow
-            self.sample_wf(ar)
+            self.edit(ar, RequestID=ar.id, **ar_fields)
 
             # progress
             self.progressbar_progress(n, len(ar_items))
@@ -585,14 +588,12 @@ class ClientARImportAddView(BrowserView):
         """
         if id is None:
             id = tmpID()
-        obj = _createObjectByType(content_type, container, id, **kwargs)
-        # roughly follow the steps of processForm
-        obj._renameAfterCreation()
+        obj = _createObjectByType(content_type, container, id)
         obj.unmarkCreationFlag()
+        obj.edit(**kwargs)
+        obj._renameAfterCreation()
         notify(ObjectInitializedEvent(obj))
         obj.at_post_create_script()
-        # obj.processForm()
-        # obj.edit(**kwargs)
         notify(ObjectCreatedEvent(obj))
         notify(ObjectAddedEvent(obj, container, obj.id))
         notifyContainerModified(container)
@@ -911,6 +912,8 @@ class ImportData(UserDict):
         """Data accessor for the named section
         """
         data = self.data[section]["data"]
+        if section == "samples":
+            return data
         if len(data) == 1:
             return data[0]
         return data
