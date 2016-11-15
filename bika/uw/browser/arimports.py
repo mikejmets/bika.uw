@@ -1,39 +1,33 @@
 # -*- coding: utf-8 -*-
 
-import os
 import csv
 import json
-import types
+import os
 import pprint
-from UserDict import UserDict
+import types
 
 from DateTime import DateTime
-
-from zope.event import notify
-from zope.interface import implements
-from zope.container.contained import ObjectAddedEvent
-from zope.container.contained import notifyContainerModified
-from zope.lifecycleevent import ObjectCreatedEvent
-
-from plone.app.layout.globals.interfaces import IViewView
-from plone.protect import CheckAuthenticator
-
+from Products.Archetypes.event import ObjectEditedEvent
+from Products.Archetypes.event import ObjectInitializedEvent
+from Products.CMFCore.utils import getToolByName
+from Products.CMFPlone.utils import _createObjectByType
+from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+from Products.statusmessages.interfaces import IStatusMessage
+from UserDict import UserDict
+from bika.lims import bikaMessageFactory as _
+from bika.lims.browser import BrowserView
+from bika.lims.utils import tmpID
+from collective.progressbar.events import InitialiseProgressBar
 from collective.progressbar.events import ProgressBar
 from collective.progressbar.events import ProgressState
 from collective.progressbar.events import UpdateProgressEvent
-from collective.progressbar.events import InitialiseProgressBar
-
-from Products.Archetypes.event import ObjectEditedEvent
-from Products.Archetypes.event import ObjectInitializedEvent
-from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
-from Products.statusmessages.interfaces import IStatusMessage
-from Products.CMFPlone.utils import transaction_note
-from Products.CMFPlone.utils import _createObjectByType
-from Products.CMFCore.utils import getToolByName
-
-from bika.lims.utils import tmpID
-from bika.lims.browser import BrowserView
-from bika.lims import bikaMessageFactory as _
+from plone.app.layout.globals.interfaces import IViewView
+from plone.protect import CheckAuthenticator
+from zope.container.contained import ObjectAddedEvent
+from zope.container.contained import notifyContainerModified
+from zope.event import notify
+from zope.interface import implements
+from zope.lifecycleevent import ObjectCreatedEvent
 
 from bika.uw import logger
 
@@ -97,7 +91,8 @@ class ClientARImportAddView(BrowserView):
     def redirect(self, url):
         """Write a redirect JavaScript to the given URL
         """
-        return self.request.response.write("<script>document.location.href='{0}'</script>".format(url))
+        url_script = "<script>document.location.href='{0}'</script>".format(url)
+        return self.request.response.write(url_script)
 
     def _prepare_import_data(self, csvfile):
         """Prepare data for import
@@ -145,7 +140,8 @@ class ClientARImportAddView(BrowserView):
         # Note: The variable names refer to the spreadsheet cells, e.g.:
         #       _2B is the cell at column B row 2.
         #
-        # File name, Client name, Client ID, Contact, Client Order Number, Client Reference
+        # File name, Client name, Client ID, Contact, Client Order Number,
+        # Client Reference
         _2B, _2C, _2D, _2E, _2F, _2G = import_data.get_data("header")[:6]
         # title, BatchID, description, ClientBatchID, ReturnSampleToClient
         _4B, _4C, _4D, _4E, _4F = import_data.get_data("batch_header")[:5]
@@ -168,7 +164,7 @@ class ClientARImportAddView(BrowserView):
         }
 
         # Check for valid sample point
-        sample_point=self.get_sample_point_by_name(_10D)
+        sample_point = self.get_sample_point_by_name(_10D)
         if sample_point is None:
             _data["valid"] = False
             msg = "Could not find Sample Point '{0}'.".format(_10D)
@@ -391,17 +387,6 @@ class ClientARImportAddView(BrowserView):
                 AmountSampledMetric=_xD,
                 #  <Field ExceptionalHazards(text:rw)>,
                 #  <Field SampleSite(string:rw)>,
-                #  <Field allowDiscussion(boolean:rw)>,
-                #  <Field subject(lines:rw)>,
-                #  <Field location(string:rw)>,
-                #  <Field contributors(lines:rw)>,
-                #  <Field creators(lines:rw)>,
-                #  <Field effectiveDate(datetime:rw)>,
-                #  <Field expirationDate(datetime:rw)>,
-                #  <Field language(string:rw)>,
-                #  <Field rights(text:rw)>,
-                #  <Field creation_date(datetime:rw)>,
-                #  <Field modification_date(datetime:rw)>,
                 #  <Field ReturnSampleToClient(boolean:rw)>,
                 ReturnSampleToClient=_4F,
                 #  <Field Hazardous(boolean:rw)>,
@@ -467,17 +452,6 @@ class ClientARImportAddView(BrowserView):
                 # <Field PreparationWorkflow(string:rw)>,
                 # <Field Priority(reference:rw)>,
                 # <Field ResultsInterpretation(text:rw)>,
-                # <Field allowDiscussion(boolean:rw)>,
-                # <Field subject(lines:rw)>,
-                # <Field location(string:rw)>,
-                # <Field contributors(lines:rw)>,
-                # <Field creators(lines:rw)>,
-                # <Field effectiveDate(datetime:rw)>,
-                # <Field expirationDate(datetime:rw)>,
-                # <Field language(string:rw)>,
-                # <Field rights(text:rw)>,
-                # <Field creation_date(datetime:rw)>,
-                # <Field modification_date(datetime:rw)>,
                 # <Field SampleTemperature(string:rw)>,
                 # <Field ReturnSampleToClient(boolean:rw)>,
                 ReturnSampleToClient=_4F,
@@ -562,7 +536,8 @@ class ClientARImportAddView(BrowserView):
             ar_fields.update(sample_fields)
             if not ar:
                 # create a new AR
-                ar = self.create_object('AnalysisRequest', client, Sample=sample.UID(), **ar_fields)
+                ar = self.create_object(
+                    'AnalysisRequest', client, Sample=sample.UID(), **ar_fields)
             # set the Sample
             ar.setSample(sample)
             # set the batch
@@ -833,7 +808,8 @@ class ImportData(UserDict):
                 # append the row data to the "data" key of the current section
                 self.data[section]["data"].append(row_data)
             except KeyError:
-                logger.error("Found invalid identifier '{0}' in Line {1}".format(row[0], n + 1))
+                logger.error("Found invalid identifier '{}' in Line {}".format(
+                    row[0], n + 1))
                 # XXX: Mark the whole set as invalid or continue?
                 continue
         return self.data
@@ -881,7 +857,7 @@ class ImportData(UserDict):
         data_filename = str(self.get_data_filename())
 
         if csv_filename.lower() != data_filename.lower():
-            return "Filename '{0}' does not match entered filename '{1}'".format(
+            return "Filename '{}' does not match entered filename '{}'".format(
                 csv_filename, data_filename)
 
         return True
@@ -889,7 +865,8 @@ class ImportData(UserDict):
     def to_json(self):
         """Return the data as a JSON string
         """
-        return json.dumps(self.data, indent=2, sort_keys=True, ensure_ascii=False)
+        return json.dumps(
+            self.data, indent=2, sort_keys=True, ensure_ascii=False)
 
     def get_csv_filename(self):
         """Return the filename of the CSV
