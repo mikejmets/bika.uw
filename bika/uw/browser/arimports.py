@@ -504,7 +504,7 @@ class ClientARImportAddView(BrowserView):
         if batch is None:
             # create a new batch
             batch = self.create_object("Batch", client, **batch_fields)
-        self.edit(batch, **batch_fields)
+        batch.edit(**batch_fields)
 
         # Create ARs, Samples, Analyses and Sample Partitions
         ar_items = import_data['analysisrequests']
@@ -556,15 +556,6 @@ class ClientARImportAddView(BrowserView):
         notifyContainerModified(container)
         logger.info("Created Content {0} in Container {1} with ID {2}".format(
             content_type, container, obj.id))
-        return obj
-
-    def edit(self, obj, **kwargs):
-        """Edit the object with the given data
-        """
-        obj.edit(**kwargs)
-        notify(ObjectEditedEvent(obj))
-        logger.info("Edited Content {0} with data {1}".format(
-            obj.id, kwargs))
         return obj
 
     def resolve_analyses(self, value):
