@@ -45,6 +45,9 @@ class ClientARImportAddView(BrowserView):
         self.request = request
         self.data = None
 
+        # used to track the last profile found in the input
+        self.profile = None
+
     def __call__(self):
         CheckAuthenticator(self.request.form)
 
@@ -396,7 +399,7 @@ class ClientARImportAddView(BrowserView):
                 # <Field SubGroup(reference:rw)>,
                 # <Field Template(reference:rw)>,
                 # <Field Profile(reference:rw)>,
-                Profile=_data['profiles'][0] if _data['profiles'] else None,
+                Profile = self.profile,
                 # <Field DateSampled(datetime:rw)>,
                 # <Field Sampler(string:rw)>,
                 # <Field SamplingDate(datetime:rw)>,
@@ -599,6 +602,7 @@ class ClientARImportAddView(BrowserView):
         # Profile Title?
         brains = bsc(portal_type='AnalysisProfile', title=value)
         if brains:
+            self.profile = brains[0].getObject()
             return [x for x in brains[0].getObject().getService()]
 
         self.statusmessage("Cannot locate service with value '{}'".format(
