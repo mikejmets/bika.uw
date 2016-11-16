@@ -17,6 +17,7 @@ from UserDict import UserDict
 from bika.lims import bikaMessageFactory as _
 from bika.lims.browser import BrowserView
 from bika.lims.utils import tmpID
+from bika.lims.utils.analysisrequest import create_analysisrequest
 from collective.progressbar.events import InitialiseProgressBar
 from collective.progressbar.events import ProgressBar
 from collective.progressbar.events import ProgressState
@@ -61,21 +62,21 @@ class ClientARImportAddView(BrowserView):
                     self.statusmessage("Error while testing import data",
                                        "warning")
                     return self.redirect(self.request.getURL())
-                valid = data["valid"]
+                valid = data['valid']
                 if valid:
                     self.statusmessage("Import Data Valid", "info")
                 else:
-                    for error in data["errors"]:
+                    for error in data['errors']:
                         self.statusmessage(error, "error")
                 self.data = pprint.pformat(data)
                 return self.template()
 
             data = self._import_file(csvfile)
-            if data["success"]:
+            if data['success']:
                 self.statusmessage(_("Import Successful"), "info")
                 url = self.urljoin(self.context.absolute_url(), "samples")
             else:
-                for error in data["errors"]:
+                for error in data['errors']:
                     self.statusmessage(error, "error")
                 url = self.urljoin(self.request.getURL())
             return self.redirect(url)
@@ -117,27 +118,27 @@ class ClientARImportAddView(BrowserView):
 
         # parse the CSV data into the interanl data structure
         import_data = ImportData(csvfile)
-        _data["import_data"] = import_data
+        _data['import_data'] = import_data
 
         # remember the csvfile
-        _data["csvfile"] = csvfile
+        _data['csvfile'] = csvfile
 
         # Validate the import data
         valid = import_data.validate()
         if type(valid) in types.StringTypes:
-            _data["valid"] = False
-            _data["errors"].append(valid)
+            _data['valid'] = False
+            _data['errors'].append(valid)
 
         # Client Handling
         client_id = self.form_get("ClientID")
         client = self.get_client_by_id(client_id)
         if client is None:
-            _data["valid"] = False
+            _data['valid'] = False
             msg = "Could not find Client {0}".format(client_id)
-            _data["errors"].append(msg)
+            _data['errors'].append(msg)
 
         # Store the client data to the output data
-        _data["client"] = {
+        _data['client'] = {
             "id": client_id,
             "title": client and client.Title() or "Client not Found",
             "obj": client,
@@ -161,12 +162,12 @@ class ClientARImportAddView(BrowserView):
         # Check for valid sample Type
         sample_type = self.get_sample_type_by_name(_10C)
         if sample_type is None:
-            _data["valid"] = False
+            _data['valid'] = False
             msg = "Could not find Sample Type '{0}.'".format(_10C)
-            _data["errors"].append(msg)
+            _data['errors'].append(msg)
 
         # Store the sample type to the output data
-        _data["sample_type"] = {
+        _data['sample_type'] = {
             "title": _10C,
             "obj": sample_type
         }
@@ -174,12 +175,12 @@ class ClientARImportAddView(BrowserView):
         # Check for valid sample point
         sample_point = self.get_sample_point_by_name(_10D)
         if sample_point is None:
-            _data["valid"] = False
+            _data['valid'] = False
             msg = "Could not find Sample Point '{0}'.".format(_10D)
-            _data["errors"].append(msg)
+            _data['errors'].append(msg)
 
         # Store the sample point to the output data
-        _data["sample_point"] = {
+        _data['sample_point'] = {
             "title": _10D,
             "obj": sample_point
         }
@@ -187,12 +188,12 @@ class ClientARImportAddView(BrowserView):
         # Check for valid Contact
         contact = self.get_contact_by_name(client, _2E)
         if contact is None:
-            _data["valid"] = False
+            _data['valid'] = False
             msg = "Could not find Contact '{0}'.".format(_2E)
-            _data["errors"].append(msg)
+            _data['errors'].append(msg)
 
         # Store the Contact to the output data
-        _data["contact"] = {
+        _data['contact'] = {
             "title": _2E,
             "obj": contact,
         }
@@ -296,7 +297,7 @@ class ClientARImportAddView(BrowserView):
         )
 
         # Save the Batch for the output data
-        _data["batch"] = {
+        _data['batch'] = {
             "title": batch_title,
             "obj": batch_obj,
             "batch_fields": batch_fields,
@@ -320,29 +321,29 @@ class ClientARImportAddView(BrowserView):
         analyses = list(_analyses)
 
         # Store the profiles to the output data
-        _data["profiles"] = []
+        _data['profiles'] = []
         for profile in profiles:
-            _data["profiles"].append({
+            _data['profiles'].append({
                 "title": profile.Title(),
                 "obj": profile
             })
-        if len(_data["profiles"]) > 1:
+        if len(_data['profiles']) > 1:
             self.statusmessage("Analyses from multiple profiles were created, "
                                "but only one profile name is stored in the AR",
                                "warning")
 
         # Store the services to the output data
-        _data["services"] = []
+        _data['services'] = []
         for service in services:
-            _data["services"].append({
+            _data['services'].append({
                 "title": service.Title(),
                 "obj": service
             })
 
         # Store the Analysis to the output data
-        _data["analyses"] = []
+        _data['analyses'] = []
         for analysis in analyses:
-            _data["analyses"].append({
+            _data['analyses'].append({
                 "title": analysis.Title(),
                 "obj": analysis
             })
@@ -350,7 +351,7 @@ class ClientARImportAddView(BrowserView):
         #
         # AR Handling
         #
-        _data["analysisrequests"] = []
+        _data['analysisrequests'] = []
         samples = import_data.get_sample_data()
         for n, item in enumerate(samples):
 
@@ -422,7 +423,7 @@ class ClientARImportAddView(BrowserView):
                 # <Field SubGroup(reference:rw)>,
                 # <Field Template(reference:rw)>,
                 # <Field Profile(reference:rw)>,
-                Profile=_data["profiles"][0] if _data["profiles"] else None,
+                Profile=_data['profiles'][0] if _data['profiles'] else None,
                 # <Field DateSampled(datetime:rw)>,
                 # <Field Sampler(string:rw)>,
                 # <Field SamplingDate(datetime:rw)>,
@@ -477,22 +478,23 @@ class ClientARImportAddView(BrowserView):
             )
 
             _item = {}
-            _item["analyses"] = map(lambda an: an.UID(), analyses)
-            _item["sample_fields"] = sample_fields
-            _item["ar_fields"] = ar_fields
+            _item['analyses'] = map(lambda an: an.UID(), analyses)
+            _item['sample_fields'] = sample_fields
+            _item['ar_fields'] = ar_fields
 
             sample = self.get_sample_by_sid(client, _xB)
-            if not sample:
-                # well, no sample, so obviously this is a CSID for a sample
-                # that we is still to be created.
-                continue
+            if sample:
+                _item['sample_obj'] = sample
+                ars = sample.getAnalysisRequests()
+                if ars:
+                    _item['analysisrequest_obj'] = ars[0]
+                else:
+                    _item['analysisrequest_obj'] = None
+            else:
+                _item['sample_obj'] = None
+                _item['analysisrequest_obj'] = None
 
-            ar = self.get_ar_by_sample(client, sample)
-
-            _item["analysisrequest_obj"] = ar
-            _item["sample_obj"] = sample
-
-            _data["analysisrequests"].append(_item)
+            _data['analysisrequests'].append(_item)
 
         return _data
 
@@ -503,10 +505,10 @@ class ClientARImportAddView(BrowserView):
         import_data = self._prepare_import_data(csvfile)
 
         # Import success: switch on errors
-        import_data["success"] = True
+        import_data['success'] = True
 
-        if import_data["valid"] is False:
-            import_data["success"] = False
+        if import_data['valid'] is False:
+            import_data['success'] = False
             return import_data
 
         #
@@ -517,57 +519,43 @@ class ClientARImportAddView(BrowserView):
         self.progressbar_init("Importing File")
 
         # get the client object
-        client = import_data["client"]["obj"]
+        client = import_data['client']['obj']
 
         # get the batch object
-        batch = import_data["batch"]["obj"]
-        batch_fields = import_data["batch"]["batch_fields"]
+        batch = import_data['batch']['obj']
+        batch_fields = import_data['batch']['batch_fields']
         if batch is None:
             # create a new batch
             batch = self.create_object("Batch", client, **batch_fields)
         self.edit(batch, **batch_fields)
 
         # Create ARs, Samples, Analyses and Sample Partitions
-        ar_items = import_data["analysisrequests"]
+        ar_items = import_data['analysisrequests']
         for n, item in enumerate(ar_items):
-            sample = item["sample_obj"]
-            sample_fields = item["sample_fields"]
-            if sample is None:
-                # create a new sample
-                sample = self.create_object("Sample", client, **sample_fields)
-            self.edit(sample, SampleID=sample.id, **sample_fields)
-            self.sample_wf(sample)
+            #
+            sample = item['sample_obj']
+            field_values = item['sample_fields']
+            field_values.update(item['ar_fields'])
+            field_values['Batch'] = batch
+            field_values['Sample'] = sample
 
-            # Create a SamplePartition
-            part = sample.contentValues()
-            if not part:
-                part = self.create_object('SamplePartition', sample, 'part-1')
+            ar = item['analysisrequest_obj']
+            if ar:
+                # Edit values of existing sample/AR
+                ar.edit(**field_values)
+                sample.edit(**field_values)
+                ar.setAnalyses(item['analyses'])
             else:
-                part = part[0]
-            self.sample_wf(part)
-
-            # Create an AnalysisRequest
-            ar = item["analysisrequest_obj"]
-            ar_fields = item["ar_fields"]
-            # merge sample fields
-            ar_fields.update(sample_fields)
-            if not ar:
                 # create a new AR
-                ar = self.create_object(
-                    'AnalysisRequest', client, Sample=sample.UID(), **ar_fields)
-            # set the Sample
-            ar.setSample(sample)
-            # set the batch
-            ar.setBatch(batch)
-            # set the workflow
-            self.sample_wf(ar)
-            # Set the list of AnalysisServices
-            analyses = item["analyses"]
-            ar.setAnalyses(analyses)
-            for analysis in ar.getAnalyses(full_objects=True):
-                analysis.setSamplePartition(part)
-            # Update the data
-            self.edit(ar, RequestID=ar.id, **ar_fields)
+                parts = [{'services': [item['analyses'], ],
+                          'separate': False,
+                          'container': None,
+                          'preservation': None,
+                          'minvol': None,
+                          }]
+                ar = create_analysisrequest(
+                    client, self.request, field_values,
+                    analyses=item['analyses'],partitions=parts)
 
             # progress
             self.progressbar_progress(n, len(ar_items))
@@ -652,24 +640,6 @@ class ClientARImportAddView(BrowserView):
                 continue
             return results[0].getObject()
         return None
-
-    def get_ar_by_sample(self, client, sample):
-        """Get the AR object by sample
-        """
-        ar = [x for x in client.objectValues('AnalysisRequest')
-              if x.getSampleUID() == sample.UID()]
-        if ar:
-            return ar[0]
-        return None
-
-    def sample_wf(self, sample):
-        if self.portal_workflow.getTransitionsFor(sample):
-            return
-        swe = self.bika_setup.getSamplingWorkflowEnabled()
-        if swe:
-            self.portal_workflow.doActionFor(sample, 'sampling_workflow')
-        else:
-            self.portal_workflow.doActionFor(sample, 'no_sampling_workflow')
 
     def get_sample_by_sid(self, client, sid):
         """Get the sample object by name
@@ -817,13 +787,13 @@ class ImportData(UserDict):
                 # a new section begins
                 section = identifier
                 # remember the fields
-                self.data[identifier]["fields"] = row_data
+                self.data[identifier]['fields'] = row_data
                 # go to the next row
                 continue
 
             try:
                 # append the row data to the "data" key of the current section
-                self.data[section]["data"].append(row_data)
+                self.data[section]['data'].append(row_data)
             except KeyError:
                 logger.error("Found invalid identifier '{}' in Line {}".format(
                     row[0], n + 1))
@@ -900,12 +870,12 @@ class ImportData(UserDict):
     def get_fields(self, section):
         """Fields accessor for the named section
         """
-        return self.data[section]["fields"]
+        return self.data[section]['fields']
 
     def get_data(self, section):
         """Data accessor for the named section
         """
-        data = self.data[section]["data"]
+        data = self.data[section]['data']
         if section == "samples":
             return data
         if len(data) == 1:
