@@ -71,30 +71,30 @@ ExceptionalHazards = ExtTextField(
 )
 
 SampleSite = ExtStringField(
-    'SampleSite',
-    searchable=True,
-    required=0,
-    widget=StringWidget(
-        visible={'edit': 'visible',
-                 'view': 'visible',
-                 'add': 'edit',
-                 'header_table': 'visible',
-                 'sample_registered': {'view': 'invisible', 'edit': 'invisible',
-                                       'add': 'edit'},
-                 'to_be_sampled': {'view': 'invisible', 'edit': 'invisible'},
-                 'sampled': {'view': 'invisible', 'edit': 'invisible'},
-                 'sample_prep': {'view': 'invisible', 'edit': 'invisible'},
-                 'to_be_preserved': {'view': 'invisible', 'edit': 'invisible'},
-                 'sample_received': {'view': 'invisible', 'edit': 'invisible'},
-                 'attachment_due': {'view': 'invisible', 'edit': 'invisible'},
-                 'to_be_verified': {'view': 'invisible', 'edit': 'invisible'},
-                 'verified': {'view': 'invisible', 'edit': 'invisible'},
-                 'published': {'view': 'invisible', 'edit': 'invisible'},
-                 'invalid': {'view': 'invisible', 'edit': 'invisible'},
-                 },
-        label=_("Sample Site"),
-        description=_("This sample's Sample Site."),
-    )
+        'SampleSite',
+        searchable=True,
+        required=0,
+        widget=StringWidget(
+            render_own_label=True,
+            visible={'edit': 'visible',
+                         'view': 'visible',
+                         'add': 'edit',
+                         'header_table': 'visible',
+                         'sample_registered': {'view': 'invisible', 'edit': 'invisible', 'add': 'edit'},
+                         'to_be_sampled':     {'view': 'invisible', 'edit': 'invisible'},
+                         'sampled':           {'view': 'invisible', 'edit': 'invisible'},
+                         'sample_prep':       {'view': 'invisible', 'edit': 'invisible'},
+                         'to_be_preserved':   {'view': 'invisible', 'edit': 'invisible'},
+                         'sample_received':   {'view': 'invisible', 'edit': 'invisible'},
+                         'attachment_due':    {'view': 'invisible', 'edit': 'invisible'},
+                         'to_be_verified':    {'view': 'invisible', 'edit': 'invisible'},
+                         'verified':          {'view': 'invisible', 'edit': 'invisible'},
+                         'published':         {'view': 'invisible', 'edit': 'invisible'},
+                         'invalid':           {'view': 'invisible', 'edit': 'invisible'},
+                         },
+                label=_("Sample Site"),
+                description=_("This sample's Sample Site."),
+        )
 )
 
 # This is acquired here from AR, who acquires default value from Batch.

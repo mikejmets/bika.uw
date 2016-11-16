@@ -268,9 +268,11 @@ SampleSite = ExtStringField(
     searchable=True,
     required=0,
     widget=StringWidget(
+        render_own_label=True,
         label=_("Sample Site"),
         description=_(
-            "A default Sample Site for ARs and Samples in this work order.  The individual objects can override this."),
+            "A default Sample Site for ARs and Samples in this work order.  "
+            "The individual objects can override this."),
         visible={'edit': 'visible',
                  'view': 'visible',
                  },
