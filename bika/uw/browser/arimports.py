@@ -5,6 +5,7 @@ import json
 import os
 import pprint
 import types
+import re
 
 from DateTime import DateTime
 from Products.Archetypes.event import ObjectEditedEvent
@@ -595,7 +596,8 @@ class ClientARImportAddView(BrowserView):
             return [brains[0].getObject()]
 
         # CAS nr of brains?
-        brains = bsc(portal_type='AnalysisService', Identifiers=value)
+        clean_value = re.sub('\W', '_', value).lower()
+        brains = bsc(portal_type='AnalysisService', Identifiers=clean_value)
         if brains:
             return [brains[0].getObject()]
 
@@ -608,6 +610,7 @@ class ClientARImportAddView(BrowserView):
         self.statusmessage("Cannot locate service with value '{}'".format(
             value
         ))
+
         return []
 
     def get_sample_by_sid(self, client, sid):
