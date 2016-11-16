@@ -306,39 +306,10 @@ class ClientARImportAddView(BrowserView):
         # List of profile/service identifiers to search for
         _analytes = import_data.get_analytes_data()
 
-        profiles = filter(lambda x: x is not None,
-                          map(self.get_profile_by_value, _analytes))
-        services = filter(lambda x: x is not None,
-                          map(self.get_service_by_value, _analytes))
-
         # Create a list of the AnalysisServices from the profiles and services
-        _analyses = set()
-        for profile in profiles:
-            for service in profile.getService():
-                _analyses.add(service)
-        for service in services:
-            _analyses.add(service)
-        analyses = list(_analyses)
-
-        # Store the profiles to the output data
-        _data['profiles'] = []
-        for profile in profiles:
-            _data['profiles'].append({
-                "title": profile.Title(),
-                "obj": profile
-            })
-        if len(_data['profiles']) > 1:
-            self.statusmessage("Analyses from multiple profiles were created, "
-                               "but only one profile name is stored in the AR",
-                               "warning")
-
-        # Store the services to the output data
-        _data['services'] = []
-        for service in services:
-            _data['services'].append({
-                "title": service.Title(),
-                "obj": service
-            })
+        analyses = []
+        for x in _analytes:
+            analyses.extend(self.resolve_analyses(x))
 
         # Store the Analysis to the output data
         _data['analyses'] = []
@@ -347,6 +318,8 @@ class ClientARImportAddView(BrowserView):
                 "title": analysis.Title(),
                 "obj": analysis
             })
+
+
 
         #
         # AR Handling
@@ -477,10 +450,10 @@ class ClientARImportAddView(BrowserView):
                 # <Field AmountSampledMetric(string:rw)>
             )
 
-            _item = {}
-            _item['analyses'] = map(lambda an: an.UID(), analyses)
-            _item['sample_fields'] = sample_fields
-            _item['ar_fields'] = ar_fields
+            _item = {'analyses': map(lambda an: an.UID(), analyses),
+                     'sample_fields': sample_fields,
+                     'ar_fields': ar_fields
+                     }
 
             sample = self.get_sample_by_sid(client, _xB)
             if sample:
@@ -553,9 +526,9 @@ class ClientARImportAddView(BrowserView):
                           'preservation': None,
                           'minvol': None,
                           }]
-                ar = create_analysisrequest(
+                create_analysisrequest(
                     client, self.request, field_values,
-                    analyses=item['analyses'],partitions=parts)
+                    analyses=item['analyses'], partitions=parts)
 
             # progress
             self.progressbar_progress(n, len(ar_items))
@@ -590,56 +563,48 @@ class ClientARImportAddView(BrowserView):
             obj.id, kwargs))
         return obj
 
-    def get_profile_by_value(self, value):
-        """Serarch a Profile by the given value and return the object of the
-        first found result or None if no results were found.
+    def resolve_analyses(self, value):
+        """Resolve a value to a Service, or a list of services.  Value can be
+        any of the following:
 
-        Search Precedence:
-            1. Search by Title
+        - Service Title
+        - Service Keyword
+        - CAS NR of Analysis Service
+        - Profile Title
+
+        These are searched in order, and the first match is the winner.
+        If a value can't be resolved to a service, an error is flagged
+
+        Returns a list of service objects found.
+
         """
-        # Profiles can be searched by the bika_setup_catalog
         bsc = self.bika_setup_catalog
+        value = value.strip()
 
-        # Precedence of search queries
-        queries = [
-            {"title": value},
-        ]
-        # Return the UID of the first found result.
-        for query in queries:
-            q = {"portal_type": "AnalysisProfile"}
-            q.update(query)
-            results = bsc(q)
-            if len(results) == 0:
-                continue
-            return results[0].getObject()
-        return None
+        # Service Title?
+        brains = bsc(portal_type='AnalysisService', title=value)
+        if brains:
+            return [brains[0].getObject()]
 
-    def get_service_by_value(self, value):
-        """Search a service by the given Value and return the object of the
-        first found result or None if no results were found.
+        # Service Keyword?
+        brains = bsc(portal_type='AnalysisService', getKeyword=value)
+        if brains:
+            return [brains[0].getObject()]
 
-        Search Precedence:
-            1. Search by CAS#
-            2. Search by Title
-            3. Search by Keyword
-        """
-        # Profiles can be searched by the bika_setup_catalog
-        bsc = self.bika_setup_catalog
+        # CAS nr of brains?
+        brains = bsc(portal_type='AnalysisService', Identifiers=value)
+        if brains:
+            return [brains[0].getObject()]
 
-        # Precedence of search queries
-        queries = [
-            {"title": value},
-            {"getKeyword": value},
-        ]
-        # Return the UID of the first found result.
-        for query in queries:
-            q = {"portal_type": "AnalysisService"}
-            q.update(query)
-            results = bsc(q)
-            if len(results) == 0:
-                continue
-            return results[0].getObject()
-        return None
+        # Profile Title?
+        brains = bsc(portal_type='AnalysisProfile', title=value)
+        if brains:
+            return [x for x in brains[0].getObject().getService()]
+
+        self.statusmessage("Cannot locate service with value '{}'".format(
+            value
+        ))
+        return []
 
     def get_sample_by_sid(self, client, sid):
         """Get the sample object by name
