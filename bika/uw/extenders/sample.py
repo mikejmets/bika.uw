@@ -70,7 +70,8 @@ SampleSite = ExtStringField(
         searchable=True,
         required=0,
         widget=StringWidget(
-                visible={'edit': 'visible',
+            render_own_label=True,
+            visible={'edit': 'visible',
                          'view': 'visible',
                          'add': 'edit',
                          'header_table': 'visible',
