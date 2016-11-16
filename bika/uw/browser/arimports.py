@@ -49,16 +49,24 @@ class ClientARImportAddView(BrowserView):
 
         if self.form_get('submitted'):
             csvfile = self.form_get('csvfile')
+            if not csvfile:
+                self.statusmessage("No input CSV file was selected", "warning")
+                return self.redirect(self.request.getURL())
+
             check_mode = self.form_get('check')
 
             if check_mode == "1":
                 data = self.check_import_data()
+                if not data:
+                    self.statusmessage("Error while testing import data",
+                                       "warning")
+                    return self.redirect(self.request.getURL())
                 valid = data["valid"]
-                errors = "\n".join(data["errors"])
                 if valid:
                     self.statusmessage("Import Data Valid", "info")
                 else:
-                    self.statusmessage(errors, "error")
+                    for error in data["errors"]:
+                        self.statusmessage(error, "error")
                 self.data = pprint.pformat(data)
                 return self.template()
 
@@ -67,9 +75,9 @@ class ClientARImportAddView(BrowserView):
                 self.statusmessage(_("Import Successful"), "info")
                 url = self.urljoin(self.context.absolute_url(), "samples")
             else:
-                errors = "\n".join(data["errors"])
-                self.statusmessage(_(errors), "error")
-                url = self.urljoin(self.context.absolute_url(), "arimport_add")
+                for error in data["errors"]:
+                    self.statusmessage(error, "error")
+                url = self.urljoin(self.request.getURL())
             return self.redirect(url)
 
         return self.template()
@@ -318,6 +326,10 @@ class ClientARImportAddView(BrowserView):
                 "title": profile.Title(),
                 "obj": profile
             })
+        if len(_data["profiles"]) > 1:
+            self.statusmessage("Analyses from multiple profiles were created, "
+                               "but only one profile name is stored in the AR",
+                               "warning")
 
         # Store the services to the output data
         _data["services"] = []
@@ -410,7 +422,7 @@ class ClientARImportAddView(BrowserView):
                 # <Field SubGroup(reference:rw)>,
                 # <Field Template(reference:rw)>,
                 # <Field Profile(reference:rw)>,
-                Profile=profile,
+                Profile=_data["profiles"][0] if _data["profiles"] else None,
                 # <Field DateSampled(datetime:rw)>,
                 # <Field Sampler(string:rw)>,
                 # <Field SamplingDate(datetime:rw)>,
@@ -470,6 +482,11 @@ class ClientARImportAddView(BrowserView):
             _item["ar_fields"] = ar_fields
 
             sample = self.get_sample_by_sid(client, _xB)
+            if not sample:
+                # well, no sample, so obviously this is a CSID for a sample
+                # that we is still to be created.
+                continue
+
             ar = self.get_ar_by_sample(client, sample)
 
             _item["analysisrequest_obj"] = ar
