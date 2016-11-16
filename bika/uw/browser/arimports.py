@@ -595,6 +595,16 @@ class ClientARImportAddView(BrowserView):
         # Profile Title?
         brains = bsc(portal_type='AnalysisProfile', title=value)
         if brains:
+            if self.profile:
+                self.statusmessage(
+                    "An AR can't yet store >1 profile reference.  Analyses "
+                    "from profile '{}' have been created, but the profile "
+                    "is not mentioned in the associated ARs.".format(
+                        self.profile.Title()
+                    ), "info")
+            self.statusmessage("Cannot locate service with value '{}'".format(
+                value
+            ))
             self.profile = brains[0].getObject()
             return [x for x in brains[0].getObject().getService()]
 
