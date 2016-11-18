@@ -2,112 +2,49 @@
 
 import csv
 import json
-import os
-import pprint
-import types
 import re
+import types
 
-from DateTime import DateTime
-from Products.Archetypes.event import ObjectEditedEvent
+from UserDict import UserDict
+from bika.lims.interfaces import IARImportHandler
+from bika.lims.utils import tmpID
+from bika.lims.utils.analysisrequest import create_analysisrequest
+from cStringIO import StringIO
+
+import DateTime
 from Products.Archetypes.event import ObjectInitializedEvent
 from Products.CMFCore.utils import getToolByName
 from Products.CMFPlone.utils import _createObjectByType
-from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from Products.statusmessages.interfaces import IStatusMessage
-from UserDict import UserDict
-from bika.lims import bikaMessageFactory as _
-from bika.lims.browser import BrowserView
-from bika.lims.utils import tmpID
-from bika.lims.utils.analysisrequest import create_analysisrequest
+from bika.uw import logger
 from collective.progressbar.events import InitialiseProgressBar
 from collective.progressbar.events import ProgressBar
 from collective.progressbar.events import ProgressState
 from collective.progressbar.events import UpdateProgressEvent
-from plone.app.layout.globals.interfaces import IViewView
-from plone.protect import CheckAuthenticator
 from zope.container.contained import ObjectAddedEvent
 from zope.container.contained import notifyContainerModified
 from zope.event import notify
 from zope.interface import implements
 from zope.lifecycleevent import ObjectCreatedEvent
 
-from bika.uw import logger
 
+class ImportHandler():
+    """Override arimport behaviour
+    """
+    implements(IARImportHandler)
 
-class ClientARImportAddView(BrowserView):
-    implements(IViewView)
-    template = ViewPageTemplateFile('templates/arimport_add_form.pt')
-
-    def __init__(self, context, request):
-        super(ClientARImportAddView, self).__init__(context, request)
-        self.bika_setup = getToolByName(context, "bika_setup")
-        self.portal_workflow = getToolByName(context, "portal_workflow")
+    def __init__(self, context):
         self.context = context
-        self.request = request
-        self.data = None
-
-        # used to track the last profile found in the input
+        self.request = None
+        self.arimport = None
         self.profile = None
 
-    def __call__(self):
-        CheckAuthenticator(self.request.form)
+    def __call__(self, request, arimport):
+        self.request = request
+        self.arimport = arimport
+        return self
 
-        if self.form_get('submitted'):
-            csvfile = self.form_get('csvfile')
-            if not csvfile:
-                self.statusmessage("No input CSV file was selected", "warning")
-                return self.redirect(self.request.getURL())
-
-            check_mode = self.form_get('check')
-
-            if check_mode == "1":
-                data = self.check_import_data()
-                if not data:
-                    self.statusmessage("Error while testing import data",
-                                       "warning")
-                    return self.redirect(self.request.getURL())
-                valid = data['valid']
-                if valid:
-                    self.statusmessage("Import Data Valid", "info")
-                else:
-                    for error in data['errors']:
-                        self.statusmessage(error, "error")
-                self.data = pprint.pformat(data)
-                return self.template()
-
-            data = self._import_file(csvfile)
-            if data['success']:
-                self.statusmessage(_("Import Successful"), "info")
-                url = self.urljoin(self.context.absolute_url(), "samples")
-            else:
-                for error in data['errors']:
-                    self.statusmessage(error, "error")
-                url = self.urljoin(self.request.getURL())
-            return self.redirect(url)
-
-        return self.template()
-
-    def urljoin(self, *args):
-        """simple urljoin
-        """
-        return "/".join(args)
-
-    def check_import_data(self):
-        """Return the parsed data as JSON
-        """
-        csvfile = self.form_get('csvfile')
-        if not csvfile:
-            return None
-        data = self._prepare_import_data(csvfile)
-        return data
-
-    def redirect(self, url):
-        """Write a redirect JavaScript to the given URL
-        """
-        url_script = "<script>document.location.href='{0}'</script>".format(url)
-        return self.request.response.write(url_script)
-
-    def _prepare_import_data(self, csvfile):
+    def parse_raw_data(self):
         """Prepare data for import
 
             - Checks data integrity
@@ -115,378 +52,188 @@ class ClientARImportAddView(BrowserView):
             - Maps Spreadsheet fields to Schema names
             - Fetch objects if they exist
         """
-        _data = {
-            "valid": True,
-            "errors": [],
-        }
 
-        # parse the CSV data into the interanl data structure
-        import_data = ImportData(csvfile)
-        _data['import_data'] = import_data
+        pc = getToolByName(self.arimport, 'portal_catalog')
+        bc = getToolByName(self.arimport, 'bika_catalog')
+        bsc = getToolByName(self.arimport, 'bika_setup_catalog')
+        client = self.arimport.aq_parent
 
-        # remember the csvfile
-        _data['csvfile'] = csvfile
+        # get parsed_data if it exists, default value if not
+        parsed_data = self.get_parsed_data()
+        # empty the errors from the last parsing,
+        # if more are added, the parse is flagged invalid.
+        parsed_data['errors'] = []
+        parsed_data['valid'] = False
+        parsed_data['success'] = False
+
+        # create dictionary from raw_data
+        importdata = ImportData(self.get_raw_data())
 
         # Validate the import data
-        valid = import_data.validate()
+        valid = importdata.validate()
         if type(valid) in types.StringTypes:
-            _data['valid'] = False
-            _data['errors'].append(valid)
-
-        # Client Handling
-        client_id = self.form_get("ClientID")
-        client = self.get_client_by_id(client_id)
-        if client is None:
-            _data['valid'] = False
-            msg = "Could not find Client {0}".format(client_id)
-            _data['errors'].append(msg)
-
-        # Store the client data to the output data
-        _data['client'] = {
-            "id": client_id,
-            "title": client and client.Title() or "Client not Found",
-            "obj": client,
-        }
+            parsed_data['errors'].append(valid)
 
         # Parse the known fields from the Spreadsheet
-        #
         # Note: The variable names refer to the spreadsheet cells, e.g.:
         #       _2B is the cell at column B row 2.
-        #
         # File name, Client name, Client ID, Contact, Client Order Number,
         # Client Reference
-        _2B, _2C, _2D, _2E, _2F, _2G = import_data.get_data("header")[:6]
+        _2B, _2C, _2D, _2E, _2F, _2G = importdata.get_data("header")[:6]
         # title, BatchID, description, ClientBatchID, ReturnSampleToClient
-        _4B, _4C, _4D, _4E, _4F = import_data.get_data("batch_header")[:5]
+        _4B, _4C, _4D, _4E, _4F = importdata.get_data("batch_header")[:5]
         # Client Comment, Lab Comment
-        _6B, _6C = import_data.get_data("batch_meta")[:2]
+        _6B, _6C = importdata.get_data("batch_meta")[:2]
         # DateSampled, Media, SamplePoint, Activity Sampled
-        _10B, _10C, _10D, _10E = import_data.get_data("samples_meta")[:4]
+        _10B, _10C, _10D, _10E = importdata.get_data("samples_meta")[:4]
 
         # Check for valid sample Type
         sample_type = self.get_sample_type_by_name(_10C)
         if sample_type is None:
-            _data['valid'] = False
             msg = "Could not find Sample Type '{0}.'".format(_10C)
-            _data['errors'].append(msg)
-
-        # Store the sample type to the output data
-        _data['sample_type'] = {
-            "title": _10C,
-            "obj": sample_type
-        }
+            parsed_data['errors'].append(msg)
 
         # Check for valid sample point
         sample_point = self.get_sample_point_by_name(_10D)
         if sample_point is None:
-            _data['valid'] = False
             msg = "Could not find Sample Point '{0}'.".format(_10D)
-            _data['errors'].append(msg)
-
-        # Store the sample point to the output data
-        _data['sample_point'] = {
-            "title": _10D,
-            "obj": sample_point
-        }
+            parsed_data['errors'].append(msg)
 
         # Check for valid Contact
-        contact = self.get_contact_by_name(client, _2E)
+        contact = self.get_contact_by_name(self.arimport.aq_parent, _2E)
         if contact is None:
-            _data['valid'] = False
             msg = "Could not find Contact '{0}'.".format(_2E)
-            _data['errors'].append(msg)
+            parsed_data['errors'].append(msg)
 
-        # Store the Contact to the output data
-        _data['contact'] = {
-            "title": _2E,
-            "obj": contact,
-        }
+        try:
+            DateTime.DateTime(_10B)
+        except:
+            msg = "Could not parse date string '{}'".format(_10B)
+            parsed_data['errors'].append(msg)
 
-        #
         # Batch Handling
-        #
-        batch_title = _4B
-        batch_obj = None
-        if batch_title:
-            existing_batch = [x for x in client.objectValues('Batch')
-                              if x.title == batch_title]
-            if existing_batch:
-                batch_obj = existing_batch[0]
-
-        batch_fields = dict(
-            # <Field id(string:rw)>,
-            # <Field BatchID(string:rw)>,
-            BatchID=_4C,
-            # <Field title(string:rw)>,
-            title=_4B,
-            # <Field Client(reference:rw)>,
-            Client=client,
-            # <Field description(text:rw)>,
-            description=_4D,
-            # <Field DateSampled(datetime_ng:rw)>,
-            DateSampled=DateTime(_10B),
-            # <Field BatchDate(datetime:rw)>,
-            # <Field BatchLabels(lines:rw)>,
-            # <Field ClientProjectName(string:rw)>,
-            # <Field ClientBatchID(string:rw)>,
-            ClientBatchID=_4E,
-            # <Field Contact(reference:rw)>,
-            Contact=contact,
-            # <Field CCContact(reference:rw)>,
-            # <Field CCEmails(lines:rw)>,
-            # <Field InvoiceContact(reference:rw)>,
-            # <Field ClientBatchComment(text:rw)>,
-            ClientBatchComment=_6B,
-            # <Field ClientPONumber(string:rw)>,
-            ClientPONumber=_2F,
-            # <Field ReturnSampleToClient(boolean:rw)>,
-            ReturnSampleToClient=_4F,
-            # <Field SampleSite(string:rw)>,
-            # <Field SampleSource(string:rw)>,
-            # <Field SampleType(reference:rw)>,
-            # <Field SampleMatrix(reference:rw)>,
-            # <Field Remarks(text:rw)>,
-            # <Field InheritedObjects(reference:rw)>,
-            # <Field InheritedObjectsUI(InheritedObjects:rw)>,
-            # <Field constrainTypesMode(integer:rw)>,
-            # <Field locallyAllowedTypes(lines:rw)>,
-            # <Field immediatelyAddableTypes(lines:rw)>,
-            # <Field allowDiscussion(boolean:rw)>,
-            # <Field excludeFromNav(boolean:rw)>,
-            # <Field nextPreviousEnabled(boolean:rw)>,
-            # <Field subject(lines:rw)>,
-            # <Field relatedItems(reference:rw)>,
-            # <Field location(string:rw)>,
-            # <Field language(string:rw)>,
-            # <Field effectiveDate(datetime:rw)>,
-            # <Field expirationDate(datetime:rw)>,
-            # <Field creation_date(datetime:rw)>,
-            # <Field modification_date(datetime:rw)>,
-            # <Field creators(lines:rw)>,
-            # <Field contributors(lines:rw)>,
-            # <Field rights(text:rw)>,
-            # <Field Analysts(lines:rw)>,
-            # <Field LeadAnalyst(string:rw)>,
-            # <Field Methods(reference:rw)>,
-            # <Field Profile(reference:rw)>,
-            # <Field NonStandardMethodInstructions(text:rw)>,
-            # <Field ApprovedExceptionsToStandardPractice(text:rw)>,
-            # <Field StorageLocation(reference:rw)>,
-            # <Field SampleTemperature(string:rw)>,
-            # <Field SampleCondition(reference:rw)>,
-            # <Field Container(reference:rw)>,
-            # <Field ActivitySampled(string:rw)>,
-            # <Field MediaLotNr(string:rw)>,
-            # <Field QCBlanksProvided(boolean:rw)>,
-            # <Field MSDSorSDS(boolean:rw)>,
-            # <Field SampleAndQCLotMatch(boolean:rw)>,
-            # <Field ClientSampleComment(text:rw)>,
-            ClientSampleComment=_6B,
-            # <Field BioHazardous(boolean:rw)>,
-            # <Field ExceptionalHazards(text:rw)>,
-            # <Field AmountSampled(string:rw)>,
-            # <Field AmountSampledMetric(string:rw)>,
-            # <Field DateQADue(datetime_ng:rw)>,
-            # <Field DatePublicationDue(datetime_ng:rw)>,
-            # <Field DateApproved(string:rw)>,
-            # <Field DateReceived(string:rw)>,
-            # <Field DateAccepted(string:rw)>,
-            # <Field DateReleased(string:rw)>,
-            # <Field DatePrepared(string:rw)>,
-            # <Field DateTested(string:rw)>,
-            # <Field DatePassedQA(string:rw)>,
-            # <Field DatePublished(string:rw)>,
-            # <Field DateCancelled(string:rw)>,
-            # <Field DateOfRetractions(lines:rw)>
-        )
-
-        # Save the Batch for the output data
-        _data['batch'] = {
-            "title": batch_title,
-            "obj": batch_obj,
-            "batch_fields": batch_fields,
+        existing_batch_title = _4B
+        if existing_batch_title:
+            brains = bc(portal_type="Batch", title=existing_batch_title)
+            existing_batch_uid = brains[0].UID if brains else None
+        else:
+            existing_batch_uid = None
+        batch_fields = {
+            'uid': existing_batch_uid,
+            'BatchID': _4C,
+            'title': _4B,
+            'Client': client.UID(),
+            'description': _4D,
+            'DateSampled': _10B,
+            'ClientBatchID': _4E,
+            'Contact': contact.UID(),
+            'ClientBatchComment': _6B,
+            'ClientPONumber': _2F,
+            'ReturnSampleToClient': _4F,
+            'ClientSampleComment': _6B,
         }
+        parsed_data['batch'] = batch_fields
 
-        # List of profile/service identifiers to search for
-        _analytes = import_data.get_analytes_data()
+        # Sample handling
 
         # Create a list of the AnalysisServices from the profiles and services
         analyses = []
-        for x in _analytes:
+        for x in importdata.get_analytes_data():
             analyses.extend(self.resolve_analyses(x))
 
-        # Store the Analysis to the output data
-        _data['analyses'] = []
-        for analysis in analyses:
-            _data['analyses'].append({
-                "title": analysis.Title(),
-                "obj": analysis
-            })
-
-
-
-        #
         # AR Handling
-        #
-        _data['analysisrequests'] = []
-        samples = import_data.get_sample_data()
+        ar_fields = {
+            'uid': None,
+            'Client': client.UID() if client else None,
+            'Contact': contact.UID() if contact else None,
+            'Profile': self.profile.UID() if self.profile else None,
+            'ReturnSampleToClient': _4F,
+            'Analyses': map(lambda an: an.UID(), analyses),
+        }
+        parsed_data['analysisrequests'] = []
+        parsed_data['samples'] = []
+        samples = importdata.get_sample_data()
         for n, item in enumerate(samples):
 
             # ClientSampleID, Amount Sampled, Metric, Remarks
             _xB, _xC, _xD, _xE = item[:4]
 
-            sample_fields = dict(
-                #  <Field id(string:rw)>,
-                #  <Field description(text:rw)>,
-                #  <Field SampleID(string:rw)>,
-                #  <Field ClientReference(string:rw)>,
-                #  <Field ClientSampleID(string:rw)>,
-                ClientSampleID=_xB,
-                #  <Field LinkedSample(reference:rw)>,
-                #  <Field SampleType(reference:rw)>,
-                SampleType=sample_type,
-                #  <Field SampleTypeTitle(computed:r)>,
-                #  <Field SamplePoint(reference:rw)>,
-                SamplePoint=sample_point,
-                #  <Field SamplePointTitle(computed:r)>,
-                #  <Field SampleMatrix(reference:rw)>,
-                #  <Field StorageLocation(reference:rw)>,
-                #  <Field SamplingWorkflowEnabled(boolean:rw)>,
-                #  <Field DateSampled(datetime:rw)>,
-                DateSampled=DateTime(_10B),
-                #  <Field Sampler(string:rw)>,
-                #  <Field SamplingDate(datetime:rw)>,
-                #  <Field PreparationWorkflow(string:rw)>,
-                #  <Field SamplingDeviation(reference:rw)>,
-                #  <Field SampleCondition(reference:rw)>,
-                #  <Field DateReceived(datetime:rw)>,
-                #  <Field ClientUID(computed:r)>,
-                #  <Field SampleTypeUID(computed:r)>,
-                #  <Field SamplePointUID(computed:r)>,
-                #  <Field Composite(boolean:rw)>,
-                #  <Field DateExpired(datetime:rw)>,
-                #  <Field DisposalDate(computed:r)>,
-                #  <Field DateDisposed(datetime:rw)>,
-                #  <Field AdHoc(boolean:rw)>,
-                #  <Field Remarks(text:rw)>,
-                Remarks=_xE,
-                #  <Field ClientSampleComment(text:rw)>,
-                #  <Field AmountSampled(string:rw)>,
-                AmountSampled=_xC,
-                #  <Field AmountSampledMetric(string:rw)>,
-                AmountSampledMetric=_xD,
-                #  <Field ExceptionalHazards(text:rw)>,
-                #  <Field SampleSite(string:rw)>,
-                #  <Field ReturnSampleToClient(boolean:rw)>,
-                ReturnSampleToClient=_4F,
-                #  <Field Hazardous(boolean:rw)>,
-                #  <Field SampleTemperature(string:rw)>
-            )
-
-            ar_fields = dict(
-                # <Field id(string:rw)>,
-                # <Field title(string:rw)>,
-                # <Field description(text:rw)>,
-                # <Field RequestID(string:rw)>,
-                # <Field Client(reference:rw)>,
-                Client=client,
-                # <Field Contact(reference:rw)>,
-                Contact=contact,
-                # <Field CCContact(reference:rw)>,
-                # <Field CCEmails(lines:rw)>,
-                # <Field InvoiceContact(reference:rw)>,
-                # <Field Sample(reference:rw)>,
-                # <Field Batch(reference:rw)>,
-                # <Field SubGroup(reference:rw)>,
-                # <Field Template(reference:rw)>,
-                # <Field Profile(reference:rw)>,
-                Profile = self.profile,
-                # <Field DateSampled(datetime:rw)>,
-                # <Field Sampler(string:rw)>,
-                # <Field SamplingDate(datetime:rw)>,
-                # <Field SampleSite(string:rw)>,
-                # <Field SampleType(reference:rw)>,
-                # <Field SampleMatrix(reference:rw)>,
-                # <Field Specification(reference:rw)>,
-                # <Field ResultsRange(analysisspec:rw)>,
-                # <Field PublicationSpecification(reference:rw)>,
-                # <Field SamplePoint(reference:rw)>,
-                # <Field StorageLocation(reference:rw)>,
-                # <Field ClientOrderNumber(string:rw)>,
-                # <Field ClientReference(string:rw)>,
-                # <Field ClientSampleID(string:rw)>,
-                # <Field SamplingDeviation(reference:rw)>,
-                # <Field SampleCondition(reference:rw)>,
-                # <Field DefaultContainerType(reference:rw)>,
-                # <Field AdHoc(boolean:rw)>,
-                # <Field Composite(boolean:rw)>,
-                # <Field ReportDryMatter(boolean:rw)>,
-                # <Field InvoiceExclude(boolean:rw)>,
-                # <Field Analyses(analyses:rw)>,
-                # <Field Attachment(reference:rw)>,
-                # <Field Invoice(reference:rw)>,
-                # <Field DateReceived(datetime:rw)>,
-                # <Field DatePublished(datetime:rw)>,
-                # <Field Remarks(text:rw)>,
-                # <Field MemberDiscount(fixedpoint:rw)>,
-                # <Field ClientUID(computed:r)>,
-                # <Field SampleTypeTitle(computed:r)>,
-                # <Field SamplePointTitle(computed:r)>,
-                # <Field SampleUID(computed:r)>,
-                # <Field SampleID(computed:r)>,
-                # <Field ContactUID(computed:r)>,
-                # <Field ProfileUID(computed:r)>,
-                # <Field Invoiced(computed:r)>,
-                # <Field ChildAnalysisRequest(reference:rw)>,
-                # <Field ParentAnalysisRequest(reference:rw)>,
-                # <Field PreparationWorkflow(string:rw)>,
-                # <Field Priority(reference:rw)>,
-                # <Field ResultsInterpretation(text:rw)>,
-                # <Field SampleTemperature(string:rw)>,
-                # <Field ReturnSampleToClient(boolean:rw)>,
-                ReturnSampleToClient=_4F,
-                # <Field Hazardous(boolean:rw)>,
-                # <Field ClientSampleComment(text:rw)>,
-                # <Field ExceptionalHazards(text:rw)>,
-                # <Field NonStandardMethodInstructions(text:rw)>,
-                # <Field ApprovedExceptionsToStandardPractice(text:rw)>,
-                # <Field AmountSampled(string:rw)>,
-                # <Field AmountSampledMetric(string:rw)>
-            )
-
-            _item = {'analyses': map(lambda an: an.UID(), analyses),
-                     'sample_fields': sample_fields,
-                     'ar_fields': ar_fields
-                     }
-
+            sample_fields = {
+                'uid': None,
+                'ClientSampleID': _xB,
+                'SampleType': sample_type.UID(),
+                'SamplePoint': sample_point.UID(),
+                'DateSampled': _10B,
+                'Remarks': _xE,
+                'AmountSampled': _xC,
+                'AmountSampledMetric': _xD,
+                'ReturnSampleToClient': _4F,
+            }
+            # if Sample and AR objects exist, set *fields['obj']
             sample = self.get_sample_by_sid(client, _xB)
             if sample:
-                _item['sample_obj'] = sample
+                sample_fields['uid'] = sample.UID()
                 ars = sample.getAnalysisRequests()
                 if ars:
-                    _item['analysisrequest_obj'] = ars[0]
-                else:
-                    _item['analysisrequest_obj'] = None
-            else:
-                _item['sample_obj'] = None
-                _item['analysisrequest_obj'] = None
+                    ar_fields['uid'] = ars[0].UID()
 
-            _data['analysisrequests'].append(_item)
+            parsed_data['samples'].append(sample_fields)
+            parsed_data['analysisrequests'].append(ar_fields)
 
-        return _data
+        if not parsed_data['errors']:
+            parsed_data['valid'] = True
+            parsed_data['success'] = True
 
-    def _import_file(self, csvfile):
+        arimport_values = {
+            'FileName': self.request.get('csvfile').filename,
+            'ParsedData': json.dumps(parsed_data),
+            'ClientID': self.arimport.aq_parent.getClientID(),
+            'ClientName': self.arimport.aq_parent.Title(),
+            'NrSamples': len(parsed_data['samples']),
+            'ClientOrderNumber': '',
+            'ClientReference': '',
+            'Contact': contact.UID(),
+            'CCContacts': [],
+            'Batch': existing_batch_uid,
+        }
+        self.arimport.edit(**arimport_values)
+
+    def get_parsed_data(self):
+        parsed_data = self.arimport.getParsedData().data
+        if not parsed_data:
+            parsed_data = {
+                "valid": False,
+                "errors": [],
+                "success": False,
+            }
+        return parsed_data
+
+    def get_raw_data(self):
+        raw_data = self.arimport.getRawData().data
+        if not raw_data:
+            raw_data = self.request.form['csvfile'].read()
+            if raw_data:
+                self.arimport.setRawData(raw_data)
+        return raw_data
+
+    def set_arimport_field_values(self, values):
+        self.arimport.edit(**values)
+
+    def import_parsed_data(self):
         """Import the CSV file.
         """
-        # get the import data
-        import_data = self._prepare_import_data(csvfile)
 
-        # Import success: switch on errors
-        import_data['success'] = True
+        print("UW import parsed data -----------")
+        import pdb;
+        pdb.set_trace();
+        pass
 
-        if import_data['valid'] is False:
-            import_data['success'] = False
-            return import_data
+        parsed_data = self.arimport.getParsedData().data
+
+        # Immediate failure
+        if parsed_data['valid'] is False:
+            parsed_data['success'] = False
+            return parsed_data
 
         #
         # Data seems valid - importing
@@ -496,24 +243,24 @@ class ClientARImportAddView(BrowserView):
         self.progressbar_init("Importing File")
 
         # get the client object
-        client = import_data['client']['obj']
+        client = parsed_data['client']['obj']
 
         # get the batch object
-        batch = import_data['batch']['obj']
-        batch_fields = import_data['batch']['batch_fields']
-        if batch is None:
+        self.batch = parsed_data['batch']['obj']
+        batch_fields = parsed_data['batch']['batch_fields']
+        if self.batch is None:
             # create a new batch
-            batch = self.create_object("Batch", client, **batch_fields)
-        batch.edit(**batch_fields)
+            self.batch = self.create_object("Batch", client, **batch_fields)
+        self.batch.edit(**batch_fields)
 
         # Create ARs, Samples, Analyses and Sample Partitions
-        ar_items = import_data['analysisrequests']
+        ar_items = parsed_data['analysisrequests']
         for n, item in enumerate(ar_items):
             #
             sample = item['sample_obj']
             field_values = item['sample_fields']
             field_values.update(item['ar_fields'])
-            field_values['Batch'] = batch
+            field_values['Batch'] = self.batch
             field_values['Sample'] = sample
 
             ar = item['analysisrequest_obj']
@@ -538,7 +285,18 @@ class ClientARImportAddView(BrowserView):
             self.progressbar_progress(n, len(ar_items))
 
         notifyContainerModified(client)
-        return import_data
+        return parsed_data
+
+    def validate_arimport(self):
+        """Validation assumes the form_data has been parsed, and that
+        the fields of the ARImport have been populated.
+
+        Return true if all field values are valid.
+        """
+
+        # Parser already checks validity - there are no intermediate
+        # ARImportItems to be checked in this version.
+        return True
 
     def create_object(self, content_type, container, id=None, **kwargs):
         """Create a new ARImportItem object by type
@@ -573,7 +331,7 @@ class ClientARImportAddView(BrowserView):
         Returns a list of service objects found.
 
         """
-        bsc = self.bika_setup_catalog
+        bsc = self.arimport.bika_setup_catalog
         value = value.strip()
 
         # Service Title?
@@ -636,7 +394,7 @@ class ClientARImportAddView(BrowserView):
     def get_sample_type_by_name(self, name):
         """Get the sample type object by name
         """
-        results = self.bika_setup_catalog(
+        results = self.arimport.bika_setup_catalog(
             dict(portal_type="SampleType", title=name))
         if results:
             return results[0].getObject()
@@ -645,7 +403,7 @@ class ClientARImportAddView(BrowserView):
     def get_sample_point_by_name(self, name):
         """Get the sample type object by name
         """
-        results = self.bika_setup_catalog(
+        results = self.arimport.bika_setup_catalog(
             dict(portal_type="SamplePoint", title=name))
         if results:
             return results[0].getObject()
@@ -667,7 +425,7 @@ class ClientARImportAddView(BrowserView):
     def get_client_by_id(self, id):
         """Search the Client by the given ID
         """
-        results = self.portal_catalog(portal_type='Client', id=id)
+        results = self.arimport.portal_catalog(portal_type='Client', id=id)
         if results:
             return results[0].getObject()
         return None
@@ -722,11 +480,10 @@ class ImportData(UserDict):
         },
     }
 
-    def __init__(self, csvfile, delimiter=";", quotechar="'"):
+    def __init__(self, raw_data, delimiter=";", quotechar="'"):
         logger.info("ImportData::__init__")
-        self.csvfile = csvfile
-        self.csvfile.seek(0)
-        self.reader = csv.reader(csvfile, delimiter=delimiter, quotechar="'")
+        stringio = StringIO(raw_data)
+        self.reader = csv.reader(stringio, delimiter=delimiter, quotechar="'")
         self.data = self.clone_data()
         self.parse()
 
@@ -774,12 +531,6 @@ class ImportData(UserDict):
                 continue
         return self.data
 
-    def clear_data(self):
-        """Clear the internal data structure
-        """
-        logger.info("************* CLEAR ***************")
-        self.data = self.clone_data()
-
     def get_row_data(self, row, start=1, remove_trailing_empty=True):
         """extract the row values starting from 'start' and removes trailing
         empty values, e.g.: ['a', 'b', '', 'd', '', ''] -> ['b', '', 'd']
@@ -811,34 +562,7 @@ class ImportData(UserDict):
             if not data:
                 return "Invalid section {0}: No data".format(section)
 
-        # Validate the filename
-        # XXX: Why do we need to do this?
-        csv_filename = str(self.get_csv_filename())
-        data_filename = str(self.get_data_filename())
-
-        if csv_filename.lower() != data_filename.lower():
-            return "Filename '{}' does not match entered filename '{}'".format(
-                csv_filename, data_filename)
-
         return True
-
-    def to_json(self):
-        """Return the data as a JSON string
-        """
-        return json.dumps(
-            self.data, indent=2, sort_keys=True, ensure_ascii=False)
-
-    def get_csv_filename(self):
-        """Return the filename of the CSV
-        """
-        filename = os.path.basename(self.csvfile.filename)
-        return os.path.splitext(filename)[0]
-
-    def get_data_filename(self):
-        """Return the filename of the "Header" section
-        """
-        header = self.get_data("header")
-        return header[0]
 
     def get_fields(self, section):
         """Fields accessor for the named section
