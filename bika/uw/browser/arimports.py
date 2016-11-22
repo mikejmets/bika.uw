@@ -147,7 +147,13 @@ class ImportHandler:
         # Create a list of the AnalysisServices from the profiles and services
         analyses = []
         for x in importdata.get_analytes_data():
-            analyses.extend(self.resolve_analyses(x))
+            resolved = self.resolve_analyses(x)
+            if isinstance(resolved, basestring):
+                parsed_data['errors'].append(resolved)
+                parsed_data['valid'] = False
+                parsed_data['success'] = False
+            else:
+                analyses.extend(resolved)
 
         # AR Handling
         parsed_data['samples'] = []
@@ -366,16 +372,9 @@ class ImportHandler:
         # Profile Title?
         brains = bsc(portal_type='AnalysisProfile', title=value)
         if brains:
-            self.statusmessage("Cannot locate service with value '{}'".format(
-                value
-            ))
             return [x for x in brains[0].getObject().getService()]
 
-        self.statusmessage("Cannot locate service with value '{}'".format(
-            value
-        ))
-
-        return []
+        return "Cannot locate service with value '{}'".format(value)
 
     def get_sample_by_sid(self, client, sid):
         """Get the sample object by name
