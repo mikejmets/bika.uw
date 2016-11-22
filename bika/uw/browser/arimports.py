@@ -3,7 +3,6 @@
 import csv
 import json
 import re
-import types
 
 from UserDict import UserDict
 from bika.lims.interfaces import IARImportHandler
@@ -28,7 +27,7 @@ from zope.interface import implements
 from zope.lifecycleevent import ObjectCreatedEvent
 
 
-class ImportHandler():
+class ImportHandler:
     """Override arimport behaviour
     """
     implements(IARImportHandler)
@@ -37,14 +36,15 @@ class ImportHandler():
         self.context = context
         self.request = None
         self.arimport = None
-        self.profile = None
+        # If a batch is defined, set it here
+        self.batch = None
 
     def __call__(self, request, arimport):
         self.request = request
         self.arimport = arimport
         return self
 
-    def parse_raw_data(self):
+    def validate_data(self):
         """Prepare data for import
 
             - Checks data integrity
@@ -53,9 +53,7 @@ class ImportHandler():
             - Fetch objects if they exist
         """
 
-        pc = getToolByName(self.arimport, 'portal_catalog')
         bc = getToolByName(self.arimport, 'bika_catalog')
-        bsc = getToolByName(self.arimport, 'bika_setup_catalog')
         client = self.arimport.aq_parent
 
         # get parsed_data if it exists, default value if not
@@ -63,15 +61,15 @@ class ImportHandler():
         # empty the errors from the last parsing,
         # if more are added, the parse is flagged invalid.
         parsed_data['errors'] = []
-        parsed_data['valid'] = False
-        parsed_data['success'] = False
+        parsed_data['valid'] = True
+        parsed_data['success'] = True
 
         # create dictionary from raw_data
         importdata = ImportData(self.get_raw_data())
 
         # Validate the import data
         valid = importdata.validate()
-        if type(valid) in types.StringTypes:
+        if isinstance(valid, basestring):
             parsed_data['errors'].append(valid)
 
         # Parse the known fields from the Spreadsheet
@@ -92,24 +90,34 @@ class ImportHandler():
         if sample_type is None:
             msg = "Could not find Sample Type '{0}.'".format(_10C)
             parsed_data['errors'].append(msg)
+            parsed_data['valid'] = False
+            parsed_data['success'] = False
 
         # Check for valid sample point
         sample_point = self.get_sample_point_by_name(_10D)
         if sample_point is None:
             msg = "Could not find Sample Point '{0}'.".format(_10D)
             parsed_data['errors'].append(msg)
+            parsed_data['valid'] = False
+            parsed_data['success'] = False
 
         # Check for valid Contact
         contact = self.get_contact_by_name(self.arimport.aq_parent, _2E)
         if contact is None:
             msg = "Could not find Contact '{0}'.".format(_2E)
             parsed_data['errors'].append(msg)
+            parsed_data['valid'] = False
+            parsed_data['success'] = False
 
+        # noinspection PyBroadException
         try:
+            # noinspection PyCallingNonCallable
             DateTime.DateTime(_10B)
         except:
             msg = "Could not parse date string '{}'".format(_10B)
             parsed_data['errors'].append(msg)
+            parsed_data['valid'] = False
+            parsed_data['success'] = False
 
         # Batch Handling
         existing_batch_title = _4B
@@ -126,7 +134,7 @@ class ImportHandler():
             'description': _4D,
             'DateSampled': _10B,
             'ClientBatchID': _4E,
-            'Contact': contact.UID(),
+            'Contact': contact.UID() if contact else None,
             'ClientBatchComment': _6B,
             'ClientPONumber': _2F,
             'ReturnSampleToClient': _4F,
@@ -142,15 +150,6 @@ class ImportHandler():
             analyses.extend(self.resolve_analyses(x))
 
         # AR Handling
-        ar_fields = {
-            'uid': None,
-            'Client': client.UID() if client else None,
-            'Contact': contact.UID() if contact else None,
-            'Profile': self.profile.UID() if self.profile else None,
-            'ReturnSampleToClient': _4F,
-            'Analyses': map(lambda an: an.UID(), analyses),
-        }
-        parsed_data['analysisrequests'] = []
         parsed_data['samples'] = []
         samples = importdata.get_sample_data()
         for n, item in enumerate(samples):
@@ -158,8 +157,10 @@ class ImportHandler():
             # ClientSampleID, Amount Sampled, Metric, Remarks
             _xB, _xC, _xD, _xE = item[:4]
 
-            sample_fields = {
+            fields = {
                 'uid': None,
+                'Client': client.UID() if client else None,
+                'Contact': contact.UID() if contact else None,
                 'ClientSampleID': _xB,
                 'SampleType': sample_type.UID(),
                 'SamplePoint': sample_point.UID(),
@@ -168,21 +169,35 @@ class ImportHandler():
                 'AmountSampled': _xC,
                 'AmountSampledMetric': _xD,
                 'ReturnSampleToClient': _4F,
+                'Profile': None,
+                'Analyses': map(lambda an: an.UID(), analyses),
             }
-            # if Sample and AR objects exist, set *fields['obj']
-            sample = self.get_sample_by_sid(client, _xB)
-            if sample:
-                sample_fields['uid'] = sample.UID()
-                ars = sample.getAnalysisRequests()
-                if ars:
-                    ar_fields['uid'] = ars[0].UID()
 
-            parsed_data['samples'].append(sample_fields)
-            parsed_data['analysisrequests'].append(ar_fields)
+            parsed_data['samples'].append(fields)
 
-        if not parsed_data['errors']:
-            parsed_data['valid'] = True
-            parsed_data['success'] = True
+        # Initialize the Progress Bar
+        self.progressbar_init("Importing File")
+
+        # Create required ARImportItems so that the GUI has something
+        # for the GridWidgets to display
+        for n, sampledata in enumerate(parsed_data['samples']):
+            next_num = tmpID()
+            self.progressbar_progress(n, len(parsed_data['samples']))
+
+            if len(analyses) > 0:
+                a_uids = [a.UID() for a in analyses]
+
+                aritem_id = '%s_%s' % ('aritem', (str(next_num)))
+                aritem = _createObjectByType("ARImportItem", self.arimport,
+                                             aritem_id)
+                aritem.edit(
+                    AmountSampled=sampledata['AmountSampled'],
+                    AmountSampledMetric=sampledata['AmountSampledMetric'],
+                    Analyses=a_uids,
+                    ClientSid=sampledata['ClientSampleID'],
+                    SamplePoint=sampledata['SamplePoint'],
+                    SampleType=sampledata['SampleType'],
+                )
 
         arimport_values = {
             'FileName': self.request.get('csvfile').filename,
@@ -192,41 +207,17 @@ class ImportHandler():
             'NrSamples': len(parsed_data['samples']),
             'ClientOrderNumber': '',
             'ClientReference': '',
-            'Contact': contact.UID(),
+            'Contact': contact.UID() if contact else None,
             'CCContacts': [],
             'Batch': existing_batch_uid,
         }
         self.arimport.edit(**arimport_values)
 
-    def get_parsed_data(self):
-        parsed_data = self.arimport.getParsedData().data
-        if not parsed_data:
-            parsed_data = {
-                "valid": False,
-                "errors": [],
-                "success": False,
-            }
-        return parsed_data
-
-    def get_raw_data(self):
-        raw_data = self.arimport.getRawData().data
-        if not raw_data:
-            raw_data = self.request.form['csvfile'].read()
-            if raw_data:
-                self.arimport.setRawData(raw_data)
-        return raw_data
-
-    def set_arimport_field_values(self, values):
-        self.arimport.edit(**values)
-
-    def import_parsed_data(self):
+    def import_data(self):
         """Import the CSV file.
         """
 
         print("UW import parsed data -----------")
-        import pdb;
-        pdb.set_trace();
-        pass
 
         parsed_data = self.arimport.getParsedData().data
 
@@ -287,6 +278,27 @@ class ImportHandler():
         notifyContainerModified(client)
         return parsed_data
 
+    def get_parsed_data(self):
+        parsed_data = self.arimport.getParsedData().data
+        if not parsed_data:
+            parsed_data = {
+                "valid": False,
+                "errors": [],
+                "success": False,
+            }
+        return parsed_data
+
+    def get_raw_data(self):
+        raw_data = self.arimport.getRawData().data
+        if not raw_data:
+            raw_data = self.request.form['csvfile'].read()
+            if raw_data:
+                self.arimport.setRawData(raw_data)
+        return raw_data
+
+    def set_arimport_field_values(self, values):
+        self.arimport.edit(**values)
+
     def validate_arimport(self):
         """Validation assumes the form_data has been parsed, and that
         the fields of the ARImport have been populated.
@@ -298,6 +310,7 @@ class ImportHandler():
         # ARImportItems to be checked in this version.
         return True
 
+    # noinspection PyShadowingBuiltins
     def create_object(self, content_type, container, id=None, **kwargs):
         """Create a new ARImportItem object by type
         """
@@ -353,17 +366,9 @@ class ImportHandler():
         # Profile Title?
         brains = bsc(portal_type='AnalysisProfile', title=value)
         if brains:
-            if self.profile:
-                self.statusmessage(
-                    "An AR can't yet store >1 profile reference.  Analyses "
-                    "from profile '{}' have been created, but the profile "
-                    "is not mentioned in the associated ARs.".format(
-                        self.profile.Title()
-                    ), "info")
             self.statusmessage("Cannot locate service with value '{}'".format(
                 value
             ))
-            self.profile = brains[0].getObject()
             return [x for x in brains[0].getObject().getService()]
 
         self.statusmessage("Cannot locate service with value '{}'".format(
@@ -422,6 +427,7 @@ class ImportHandler():
         progress = ProgressState(self.request, progress_index)
         notify(UpdateProgressEvent(progress))
 
+    # noinspection PyShadowingBuiltins
     def get_client_by_id(self, id):
         """Search the Client by the given ID
         """
@@ -433,6 +439,7 @@ class ImportHandler():
     def statusmessage(self, msg, facility="info"):
         """Add a statusmessage to the response
         """
+        # noinspection PyArgumentList
         return IStatusMessage(self.request).addStatusMessage(msg, facility)
 
     def form_get(self, key):
@@ -480,9 +487,11 @@ class ImportData(UserDict):
         },
     }
 
-    def __init__(self, raw_data, delimiter=";", quotechar="'"):
+    def __init__(self, raw_data, delimiter=";", quotechar="'", **kwargs):
+        UserDict.__init__(self, **kwargs)
         logger.info("ImportData::__init__")
         stringio = StringIO(raw_data)
+        self.quotechar = quotechar
         self.reader = csv.reader(stringio, delimiter=delimiter, quotechar="'")
         self.data = self.clone_data()
         self.parse()
