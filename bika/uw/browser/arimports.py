@@ -182,13 +182,13 @@ class ImportHandler:
             parsed_data['samples'].append(fields)
 
         # Initialize the Progress Bar
-        self.progressbar_init("Importing File")
+        # self.progressbar_init("Importing File")
 
         # Create required ARImportItems so that the GUI has something
         # for the GridWidgets to display
         for n, sampledata in enumerate(parsed_data['samples']):
             next_num = tmpID()
-            self.progressbar_progress(n, len(parsed_data['samples']))
+            # self.progressbar_progress(n, len(parsed_data['samples']))
 
             if len(analyses) > 0:
                 a_uids = [a.UID() for a in analyses]
