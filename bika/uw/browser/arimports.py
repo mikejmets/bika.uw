@@ -218,6 +218,7 @@ class ImportHandler:
             'Batch': existing_batch_uid,
         }
         self.arimport.edit(**arimport_values)
+        self.arimport.reindexObject()
 
     def import_data(self):
         """Import the CSV file.
