@@ -219,6 +219,7 @@ class ImportHandler:
         }
         self.arimport.edit(**arimport_values)
         self.arimport.reindexObject()
+        import pdb;pdb.set_trace();pass
 
     def import_data(self):
         """Import the CSV file.
@@ -227,11 +228,6 @@ class ImportHandler:
         print("UW import parsed data -----------")
 
         parsed_data = self.arimport.getParsedData().data
-
-        # Immediate failure
-        if parsed_data['valid'] is False:
-            parsed_data['success'] = False
-            return parsed_data
 
         #
         # Data seems valid - importing
@@ -302,9 +298,6 @@ class ImportHandler:
             if raw_data:
                 self.arimport.setRawData(raw_data)
         return raw_data
-
-    def set_arimport_field_values(self, values):
-        self.arimport.edit(**values)
 
     def validate_arimport(self):
         """Validation assumes the form_data has been parsed, and that
