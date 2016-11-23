@@ -218,8 +218,8 @@ class ImportHandler:
             'Batch': existing_batch_uid,
         }
         self.arimport.edit(**arimport_values)
-        self.arimport.reindexObject()
         import pdb;pdb.set_trace();pass
+        self.arimport.reindexObject()
 
     def import_data(self):
         """Import the CSV file.
