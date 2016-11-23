@@ -62,7 +62,6 @@ class ImportHandler:
         # if more are added, the parse is flagged invalid.
         parsed_data['errors'] = []
         parsed_data['valid'] = True
-        parsed_data['success'] = True
 
         # create dictionary from raw_data
         importdata = ImportData(self.get_raw_data())
@@ -91,7 +90,6 @@ class ImportHandler:
             msg = "Could not find Sample Type '{0}.'".format(_10C)
             parsed_data['errors'].append(msg)
             parsed_data['valid'] = False
-            parsed_data['success'] = False
 
         # Check for valid sample point
         sample_point = self.get_sample_point_by_name(_10D)
@@ -99,7 +97,6 @@ class ImportHandler:
             msg = "Could not find Sample Point '{0}'.".format(_10D)
             parsed_data['errors'].append(msg)
             parsed_data['valid'] = False
-            parsed_data['success'] = False
 
         # Check for valid Contact
         contact = self.get_contact_by_name(self.arimport.aq_parent, _2E)
@@ -107,7 +104,6 @@ class ImportHandler:
             msg = "Could not find Contact '{0}'.".format(_2E)
             parsed_data['errors'].append(msg)
             parsed_data['valid'] = False
-            parsed_data['success'] = False
 
         # noinspection PyBroadException
         try:
@@ -117,7 +113,6 @@ class ImportHandler:
             msg = "Could not parse date string '{}'".format(_10B)
             parsed_data['errors'].append(msg)
             parsed_data['valid'] = False
-            parsed_data['success'] = False
 
         # Batch Handling
         existing_batch_title = _4B
@@ -151,7 +146,6 @@ class ImportHandler:
             if isinstance(resolved, basestring):
                 parsed_data['errors'].append(resolved)
                 parsed_data['valid'] = False
-                parsed_data['success'] = False
             else:
                 analyses.extend(resolved)
 
@@ -287,7 +281,6 @@ class ImportHandler:
             parsed_data = {
                 "valid": False,
                 "errors": [],
-                "success": False,
             }
         return parsed_data
 
