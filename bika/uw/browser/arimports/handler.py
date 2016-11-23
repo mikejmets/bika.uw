@@ -1,57 +1,49 @@
 # -*- coding: utf-8 -*-
 
-import csv
 import json
-import re
 
-from UserDict import UserDict
-from bika.lims.interfaces import IARImportHandler
+from bika.lims.browser.arimport.handler import ImportHandler as BaseHandler
 from bika.lims.utils import tmpID
 from bika.lims.utils.analysisrequest import create_analysisrequest
-from cStringIO import StringIO
 
 import DateTime
-from Products.Archetypes.event import ObjectInitializedEvent
 from Products.CMFCore.utils import getToolByName
 from Products.CMFPlone.utils import _createObjectByType
-from Products.statusmessages.interfaces import IStatusMessage
-from bika.uw import logger
 from collective.progressbar.events import InitialiseProgressBar
 from collective.progressbar.events import ProgressBar
 from collective.progressbar.events import ProgressState
 from collective.progressbar.events import UpdateProgressEvent
-from zope.container.contained import ObjectAddedEvent
 from zope.container.contained import notifyContainerModified
 from zope.event import notify
-from zope.interface import implements
-from zope.lifecycleevent import ObjectCreatedEvent
 
 
-class ImportHandler:
+class ImportHandler(BaseHandler):
     """Override arimport behaviour
     """
-    implements(IARImportHandler)
-
-    def __init__(self, context):
-        self.context = context
-        self.request = None
-        self.arimport = None
-        # If a batch is defined, set it here
-        self.batch = None
-
-    def __call__(self, request, arimport):
-        self.request = request
-        self.arimport = arimport
-        return self
 
     def validate_data(self):
         """Prepare data for import
 
-            - Checks data integrity
+            1) IF raw data IS NOT present in the ARImport.RawData:
+                    - extract raw data from submitted form
+            2) IF raw data IS present in ARImport.RawData:
+               (it will be, see 1 above)
+                    - extract known fields from raw data
+                    - create ARImportItems for each AR to be created
+                        - ARImportItem represents Sample and AR fields.
+                    - check data integrity
+            3) IF ARImportItem fields are validated, set ARImport.Valid = True.
+
+            2) IF raw data IS present in ARImport.RawData
+                - create ARImportItems
+
             - Extracts the known fields from the Spreadsheet
-            - Maps Spreadsheet fields to Schema names
-            - Fetch objects if they exist
+            - Checks data integrity
+            - Creates ARImportItems
+            - Flags ARImport object as valid or invalid.
         """
+
+
 
         bc = getToolByName(self.arimport, 'bika_catalog')
         client = self.arimport.aq_parent
@@ -212,7 +204,9 @@ class ImportHandler:
             'Batch': existing_batch_uid,
         }
         self.arimport.edit(**arimport_values)
-        import pdb;pdb.set_trace();pass
+        import pdb
+        pdb.set_trace()
+        pass
         self.arimport.reindexObject()
 
     def import_data(self):
@@ -303,66 +297,6 @@ class ImportHandler:
         # ARImportItems to be checked in this version.
         return True
 
-    # noinspection PyShadowingBuiltins
-    def create_object(self, content_type, container, id=None, **kwargs):
-        """Create a new ARImportItem object by type
-        """
-        if id is None:
-            id = tmpID()
-        obj = _createObjectByType(content_type, container, id)
-        obj.unmarkCreationFlag()
-        obj.edit(**kwargs)
-        obj._renameAfterCreation()
-        notify(ObjectInitializedEvent(obj))
-        obj.at_post_create_script()
-        notify(ObjectCreatedEvent(obj))
-        notify(ObjectAddedEvent(obj, container, obj.id))
-        notifyContainerModified(container)
-        logger.info("Created Content {0} in Container {1} with ID {2}".format(
-            content_type, container, obj.id))
-        return obj
-
-    def resolve_analyses(self, value):
-        """Resolve a value to a Service, or a list of services.  Value can be
-        any of the following:
-
-        - Service Title
-        - Service Keyword
-        - CAS NR of Analysis Service
-        - Profile Title
-
-        These are searched in order, and the first match is the winner.
-        If a value can't be resolved to a service, an error is flagged
-
-        Returns a list of service objects found.
-
-        """
-        bsc = self.arimport.bika_setup_catalog
-        value = value.strip()
-
-        # Service Title?
-        brains = bsc(portal_type='AnalysisService', title=value)
-        if brains:
-            return [brains[0].getObject()]
-
-        # Service Keyword?
-        brains = bsc(portal_type='AnalysisService', getKeyword=value)
-        if brains:
-            return [brains[0].getObject()]
-
-        # CAS nr of brains?
-        clean_value = re.sub('\W', '_', value).lower()
-        brains = bsc(portal_type='AnalysisService', Identifiers=clean_value)
-        if brains:
-            return [brains[0].getObject()]
-
-        # Profile Title?
-        brains = bsc(portal_type='AnalysisProfile', title=value)
-        if brains:
-            return [x for x in brains[0].getObject().getService()]
-
-        return "Cannot locate service with value '{}'".format(value)
-
     def get_sample_by_sid(self, client, sid):
         """Get the sample object by name
         """
@@ -412,174 +346,3 @@ class ImportHandler:
         progress_index = float(n) / float(total) * 100.0
         progress = ProgressState(self.request, progress_index)
         notify(UpdateProgressEvent(progress))
-
-    # noinspection PyShadowingBuiltins
-    def get_client_by_id(self, id):
-        """Search the Client by the given ID
-        """
-        results = self.arimport.portal_catalog(portal_type='Client', id=id)
-        if results:
-            return results[0].getObject()
-        return None
-
-    def statusmessage(self, msg, facility="info"):
-        """Add a statusmessage to the response
-        """
-        # noinspection PyArgumentList
-        return IStatusMessage(self.request).addStatusMessage(msg, facility)
-
-    def form_get(self, key):
-        """Get the value from the form
-        """
-        form = self.request.form
-        value = form.get(key)
-        logger.debug("key={0} -> value={1}".format(key, value))
-        return value
-
-
-class ImportData(UserDict):
-    """Dictionary wrapper to hold the spreadsheet data.
-    """
-
-    # Internal data representation of the spreadsheet table.
-    # Description:
-    # The keys (sections) must match the values of the first column (lowered
-    # and underdashified). Value of the same row get stored in fields key.
-    # Following lines matching no section get appended to the data key.
-    _data = {
-        "header": {
-            "fields": [],
-            "data": [],
-        },
-        "batch_header": {
-            "fields": [],
-            "data": [],
-        },
-        "batch_meta": {
-            "fields": [],
-            "data": [],
-        },
-        "analytes": {
-            "fields": [],
-            "data": [],
-        },
-        "samples_meta": {
-            "fields": [],
-            "data": [],
-        },
-        "samples": {
-            "fields": [],
-            "data": [],
-        },
-    }
-
-    def __init__(self, raw_data, delimiter=";", quotechar="'", **kwargs):
-        UserDict.__init__(self, **kwargs)
-        logger.info("ImportData::__init__")
-        stringio = StringIO(raw_data)
-        self.quotechar = quotechar
-        self.reader = csv.reader(stringio, delimiter=delimiter, quotechar="'")
-        self.data = self.clone_data()
-        self.parse()
-
-    def clone_data(self):
-        """Make a deepcopy of the data structure
-        """
-        import copy
-        return copy.deepcopy(self._data)
-
-    def parse(self):
-        """Parse the CSV to the internal data structure
-        """
-        logger.info("Parsing CSV.")
-
-        section = None
-        for n, row in enumerate(self.reader):
-            # we use row[0] as an identifier per row to match the key in the
-            # data dict, e.g. Batch Header -> batch_header
-            identifier = row[0].replace(" ", "_").lower()
-
-            # get the row data
-            row_data = self.get_row_data(row)
-
-            # skip empty cells
-            if row_data is None:
-                # logger.warn("Row {0} contains no data, skipping.".format(n))
-                continue
-
-            # check if the current identifier matches a key in the data dict
-            if identifier in self.data:
-                # a new section begins
-                section = identifier
-                # remember the fields
-                self.data[identifier]['fields'] = row_data
-                # go to the next row
-                continue
-
-            try:
-                # append the row data to the "data" key of the current section
-                self.data[section]['data'].append(row_data)
-            except KeyError:
-                logger.error("Found invalid identifier '{}' in Line {}".format(
-                    row[0], n + 1))
-                # XXX: Mark the whole set as invalid or continue?
-                continue
-        return self.data
-
-    def get_row_data(self, row, start=1, remove_trailing_empty=True):
-        """extract the row values starting from 'start' and removes trailing
-        empty values, e.g.: ['a', 'b', '', 'd', '', ''] -> ['b', '', 'd']
-        """
-        end = len(row)
-        if remove_trailing_empty:
-            # we iterate from the end of the list to the start to remove
-            # empty cells
-            rev = reversed(row)
-            for n, i in enumerate(rev):
-                if n + 1 == len(row):
-                    return None
-                if i != "":
-                    return row[start:end - n]
-        return row[start:end]
-
-    def validate(self):
-        """Validate the internal data structure
-        """
-        # Validate the sections
-        for section in self.keys():
-            logger.info("Processing Section {0}".format(section))
-
-            fields = self.get_fields(section)
-            data = self.get_data(section)
-
-            if not fields:
-                return "Invalid section {0}: No fields".format(section)
-            if not data:
-                return "Invalid section {0}: No data".format(section)
-
-        return True
-
-    def get_fields(self, section):
-        """Fields accessor for the named section
-        """
-        return self.data[section]['fields']
-
-    def get_data(self, section):
-        """Data accessor for the named section
-        """
-        data = self.data[section]['data']
-        if section == "samples":
-            return data
-        if len(data) == 1:
-            return data[0]
-        return data
-
-    def get_sample_data(self):
-        """Return the data of the "Samples" section
-        """
-        return self.get_data("samples")
-
-    def get_analytes_data(self):
-        """Return the data of the "Analytes" section
-        """
-        return self.get_data("analytes")

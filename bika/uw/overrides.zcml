@@ -10,7 +10,7 @@
     <adapter
         provides="bika.lims.interfaces.IARImportHandler"
         for="zope.interface.Interface"
-        factory="bika.uw.browser.arimports.ImportHandler"
+        factory="bika.uw.browser.arimports.handler.ImportHandler"
         name="ARImportHandler"
     />
 
