@@ -1,348 +1,317 @@
 # -*- coding: utf-8 -*-
 
-import json
-
 from bika.lims.browser.arimport.handler import ImportHandler as BaseHandler
+from bika.lims.interfaces import IARImportHandler
 from bika.lims.utils import tmpID
 from bika.lims.utils.analysisrequest import create_analysisrequest
+from bika.lims.utils.sample import create_sample
+from bika.lims.utils.samplepartition import create_samplepartition
+from zope.interface import implements
 
-import DateTime
+import transaction
+from DateTime import DateTime
+from Products.Archetypes.event import ObjectInitializedEvent
 from Products.CMFCore.utils import getToolByName
 from Products.CMFPlone.utils import _createObjectByType
-from collective.progressbar.events import InitialiseProgressBar
-from collective.progressbar.events import ProgressBar
-from collective.progressbar.events import ProgressState
-from collective.progressbar.events import UpdateProgressEvent
-from zope.container.contained import notifyContainerModified
-from zope.event import notify
+from zExceptions import Redirect
+from zope import event
 
 
 class ImportHandler(BaseHandler):
     """Override arimport behaviour
     """
+    implements(IARImportHandler)
 
-    def validate_data(self):
-        """Prepare data for import
+    def __init__(self, context, request):
+        super(ImportHandler, self).__init__(context, request)
 
-            1) IF raw data IS NOT present in the ARImport.RawData:
-                    - extract raw data from submitted form
-            2) IF raw data IS present in ARImport.RawData:
-               (it will be, see 1 above)
-                    - extract known fields from raw data
-                    - create ARImportItems for each AR to be created
-                        - ARImportItem represents Sample and AR fields.
-                    - check data integrity
-            3) IF ARImportItem fields are validated, set ARImport.Valid = True.
+    def parse_raw_data(self):
+        """Parse the UW-format of import file, do some limited parsing,
+        and store the values
 
-            2) IF raw data IS present in ARImport.RawData
-                - create ARImportItems
-
-            - Extracts the known fields from the Spreadsheet
-            - Checks data integrity
-            - Creates ARImportItems
-            - Flags ARImport object as valid or invalid.
+        This is intentionally brittle, the UW form requires certain
+        fields at certain positions, and is fixed.  Further modifications
+        to the input file require modifications to this code.
         """
 
+        context = self.context
+        bika_catalog = getToolByName(context, 'bika_catalog')
 
+        blob = context.Schema()['RawData'].get(context)
+        lines = blob.data.splitlines()
 
-        bc = getToolByName(self.arimport, 'bika_catalog')
-        client = self.arimport.aq_parent
+        # Header data
+        line = [x.strip('"').strip("'") for x in lines[1].split(',')]
+        _clientname = line[2]
+        _clientid = line[3]
+        _contactname = line[4]
+        _clientordernumber = line[5]
+        _clientreference = line[6]
+        # Batch data
+        line = [x.strip('"').strip("'") for x in lines[3].split(',')]
+        _batchtitle = line[1]
+        _batchid = line[2]
+        _batchdescription = line[3]
+        _clientbatchid = line[4]
+        returnsampletoclient = line[5]
+        # "Batch meta" (just more batch data really)
+        line = [x.strip('"').strip("'") for x in lines[5].split(',')]
+        _clientbatchcomment = line[1]
+        _labbatchcomment = line[2]
+        # analytes (profile titles, service titles, service keywords, CAS nr)
+        line = [x.strip('"').strip("'") for x in lines[7].split(',')]
+        _analytes = [x for x in line[1:] if x]
+        # Samples "meta" (common values for all samples)
+        line = [x.strip('"').strip("'") for x in lines[9].split(',')]
+        _datesampled = line[1]
+        _sampletype = line[2]
+        _samplepoint = line[3]
+        _activitysampled = line[4]
+        # count the number of sample rows
+        nr_samples = len([x for x in lines[11:] if len(x.split(',')) > 1])
 
-        # get parsed_data if it exists, default value if not
-        parsed_data = self.get_parsed_data()
-        # empty the errors from the last parsing,
-        # if more are added, the parse is flagged invalid.
-        parsed_data['errors'] = []
-        parsed_data['valid'] = True
+        # If batch already exists, link it now.
+        brains = bika_catalog(portal_type='Batch', title=_batchtitle)
+        batch = brains[0].getObject() if brains else None
 
-        # create dictionary from raw_data
-        importdata = ImportData(self.get_raw_data())
-
-        # Validate the import data
-        valid = importdata.validate()
-        if isinstance(valid, basestring):
-            parsed_data['errors'].append(valid)
-
-        # Parse the known fields from the Spreadsheet
-        # Note: The variable names refer to the spreadsheet cells, e.g.:
-        #       _2B is the cell at column B row 2.
-        # File name, Client name, Client ID, Contact, Client Order Number,
-        # Client Reference
-        _2B, _2C, _2D, _2E, _2F, _2G = importdata.get_data("header")[:6]
-        # title, BatchID, description, ClientBatchID, ReturnSampleToClient
-        _4B, _4C, _4D, _4E, _4F = importdata.get_data("batch_header")[:5]
-        # Client Comment, Lab Comment
-        _6B, _6C = importdata.get_data("batch_meta")[:2]
-        # DateSampled, Media, SamplePoint, Activity Sampled
-        _10B, _10C, _10D, _10E = importdata.get_data("samples_meta")[:4]
-
-        # Check for valid sample Type
-        sample_type = self.get_sample_type_by_name(_10C)
-        if sample_type is None:
-            msg = "Could not find Sample Type '{0}.'".format(_10C)
-            parsed_data['errors'].append(msg)
-            parsed_data['valid'] = False
-
-        # Check for valid sample point
-        sample_point = self.get_sample_point_by_name(_10D)
-        if sample_point is None:
-            msg = "Could not find Sample Point '{0}'.".format(_10D)
-            parsed_data['errors'].append(msg)
-            parsed_data['valid'] = False
-
-        # Check for valid Contact
-        contact = self.get_contact_by_name(self.arimport.aq_parent, _2E)
-        if contact is None:
-            msg = "Could not find Contact '{0}'.".format(_2E)
-            parsed_data['errors'].append(msg)
-            parsed_data['valid'] = False
-
-        # noinspection PyBroadException
-        try:
-            # noinspection PyCallingNonCallable
-            DateTime.DateTime(_10B)
-        except:
-            msg = "Could not parse date string '{}'".format(_10B)
-            parsed_data['errors'].append(msg)
-            parsed_data['valid'] = False
-
-        # Batch Handling
-        existing_batch_title = _4B
-        if existing_batch_title:
-            brains = bc(portal_type="Batch", title=existing_batch_title)
-            existing_batch_uid = brains[0].UID if brains else None
-        else:
-            existing_batch_uid = None
-        batch_fields = {
-            'uid': existing_batch_uid,
-            'BatchID': _4C,
-            'title': _4B,
-            'Client': client.UID(),
-            'description': _4D,
-            'DateSampled': _10B,
-            'ClientBatchID': _4E,
-            'Contact': contact.UID() if contact else None,
-            'ClientBatchComment': _6B,
-            'ClientPONumber': _2F,
-            'ReturnSampleToClient': _4F,
-            'ClientSampleComment': _6B,
-        }
-        parsed_data['batch'] = batch_fields
-
-        # Sample handling
-
-        # Create a list of the AnalysisServices from the profiles and services
-        analyses = []
-        for x in importdata.get_analytes_data():
-            resolved = self.resolve_analyses(x)
-            if isinstance(resolved, basestring):
-                parsed_data['errors'].append(resolved)
-                parsed_data['valid'] = False
-            else:
-                analyses.extend(resolved)
-
-        # AR Handling
-        parsed_data['samples'] = []
-        samples = importdata.get_sample_data()
-        for n, item in enumerate(samples):
-
-            # ClientSampleID, Amount Sampled, Metric, Remarks
-            _xB, _xC, _xD, _xE = item[:4]
-
-            fields = {
-                'uid': None,
-                'Client': client.UID() if client else None,
-                'Contact': contact.UID() if contact else None,
-                'ClientSampleID': _xB,
-                'SampleType': sample_type.UID(),
-                'SamplePoint': sample_point.UID(),
-                'DateSampled': _10B,
-                'Remarks': _xE,
-                'AmountSampled': _xC,
-                'AmountSampledMetric': _xD,
-                'ReturnSampleToClient': _4F,
-                'Profile': None,
-                'Analyses': map(lambda an: an.UID(), analyses),
-            }
-
-            parsed_data['samples'].append(fields)
-
-        # Initialize the Progress Bar
-        # self.progressbar_init("Importing File")
-
-        # Create required ARImportItems so that the GUI has something
-        # for the GridWidgets to display
-        for n, sampledata in enumerate(parsed_data['samples']):
-            next_num = tmpID()
-            # self.progressbar_progress(n, len(parsed_data['samples']))
-
-            if len(analyses) > 0:
-                a_uids = [a.UID() for a in analyses]
-
-                aritem_id = '%s_%s' % ('aritem', (str(next_num)))
-                aritem = _createObjectByType("ARImportItem", self.arimport,
-                                             aritem_id)
-                aritem.edit(
-                    AmountSampled=sampledata['AmountSampled'],
-                    AmountSampledMetric=sampledata['AmountSampledMetric'],
-                    Analyses=a_uids,
-                    ClientSid=sampledata['ClientSampleID'],
-                    SamplePoint=sampledata['SamplePoint'],
-                    SampleType=sampledata['SampleType'],
-                )
-
+        # Write applicable values to ARImport schema
+        # These are values that will be used in all created objects,
+        # and are set only once.
         arimport_values = {
-            'FileName': self.request.get('csvfile').filename,
-            'ParsedData': json.dumps(parsed_data),
-            'ClientID': self.arimport.aq_parent.getClientID(),
-            'ClientName': self.arimport.aq_parent.Title(),
-            'NrSamples': len(parsed_data['samples']),
-            'ClientOrderNumber': '',
-            'ClientReference': '',
-            'Contact': contact.UID() if contact else None,
+            'ClientName': _clientname,
+            'ClientID': _clientid,
+            'ClientOrderNumber': _clientordernumber,
+            'ClientReference': _clientreference,
+            'ContactName': _contactname,
             'CCContacts': [],
-            'Batch': existing_batch_uid,
+            'SamplePoint': None,
+            'SampleType': None,
+            'ActivitySampled': _activitysampled,
+            'BatchTitle': _batchtitle,
+            'BatchDescription': _batchdescription,
+            'BatchID': _batchid,
+            'ClientBatchID': _clientbatchid,
+            'LabBatchComment': _labbatchcomment,
+            'ClientBatchComment': _clientbatchcomment,
+            'Batch': batch,
+            'NrSamples': nr_samples
         }
-        self.arimport.edit(**arimport_values)
-        import pdb
-        pdb.set_trace()
-        pass
-        self.arimport.reindexObject()
+        # Write initial values to ARImport schema
+        for fieldname, fieldvalue in arimport_values.items():
+            context.Schema()[fieldname].set(context, fieldvalue)
 
-    def import_data(self):
-        """Import the CSV file.
-        """
-
-        print("UW import parsed data -----------")
-
-        parsed_data = self.arimport.getParsedData().data
-
-        #
-        # Data seems valid - importing
-        #
-
-        # Initialize the Progress Bar
-        self.progressbar_init("Importing File")
-
-        # get the client object
-        client = parsed_data['client']['obj']
-
-        # get the batch object
-        self.batch = parsed_data['batch']['obj']
-        batch_fields = parsed_data['batch']['batch_fields']
-        if self.batch is None:
-            # create a new batch
-            self.batch = self.create_object("Batch", client, **batch_fields)
-        self.batch.edit(**batch_fields)
-
-        # Create ARs, Samples, Analyses and Sample Partitions
-        ar_items = parsed_data['analysisrequests']
-        for n, item in enumerate(ar_items):
-            #
-            sample = item['sample_obj']
-            field_values = item['sample_fields']
-            field_values.update(item['ar_fields'])
-            field_values['Batch'] = self.batch
-            field_values['Sample'] = sample
-
-            ar = item['analysisrequest_obj']
-            if ar:
-                # Edit values of existing sample/AR
-                ar.edit(**field_values)
-                sample.edit(**field_values)
-                ar.setAnalyses(item['analyses'])
-            else:
-                # create a new AR
-                parts = [{'services': [item['analyses'], ],
-                          'separate': False,
-                          'container': None,
-                          'preservation': None,
-                          'minvol': None,
-                          }]
-                create_analysisrequest(
-                    client, self.request, field_values,
-                    analyses=item['analyses'], partitions=parts)
-
-            # progress
-            self.progressbar_progress(n, len(ar_items))
-
-        notifyContainerModified(client)
-        return parsed_data
-
-    def get_parsed_data(self):
-        parsed_data = self.arimport.getParsedData().data
-        if not parsed_data:
-            parsed_data = {
-                "valid": False,
-                "errors": [],
+        itemdata = []
+        for sample_nr in range(nr_samples):
+            line = [x.strip('"').strip("'")
+                    for x in lines[11 + sample_nr].split(',')]
+            clientsampleid = line[1]
+            amountsampled = line[2]
+            metric = line[3]
+            remarks = line[4]
+            values = {
+                'ClientSampleID': clientsampleid,
+                'AmountSampled': amountsampled,
+                'Metric': metric,
+                'DateSampled': _datesampled,
+                'Analyses': _analytes,
+                'Remarks': remarks,
             }
-        return parsed_data
+            itemdata.append(values)
+            context.Schema()['ItemData'].set(context, itemdata)
+        context.reindexObject()
 
-    def get_raw_data(self):
-        raw_data = self.arimport.getRawData().data
-        if not raw_data:
-            raw_data = self.request.form['csvfile'].read()
-            if raw_data:
-                self.arimport.setRawData(raw_data)
-        return raw_data
+    def validate(self):
+        """Resolve and validate stored values
 
-    def validate_arimport(self):
-        """Validation assumes the form_data has been parsed, and that
-        the fields of the ARImport have been populated.
+        This function is responsible for setting context.Valid=True.
 
-        Return true if all field values are valid.
+        If this function does not set Valid=True, the reasons why must
+        be stored in context.Errors.
         """
 
-        # Parser already checks validity - there are no intermediate
-        # ARImportItems to be checked in this version.
-        return True
+        context = self.context
+        portal_catalog = getToolByName(context, 'portal_catalog')
+        bika_catalog = getToolByName(context, 'bika_catalog')
 
-    def get_sample_by_sid(self, client, sid):
-        """Get the sample object by name
-        """
-        sample = [x for x in client.objectValues('Sample')
-                  if x.getClientSampleID() == sid]
-        if sample:
-            return sample[0]
-        return None
+        errors = []
 
-    def get_contact_by_name(self, client, name):
-        """Get the contact object by name
-        """
-        contact = [x for x in client.objectValues('Contact')
-                   if x.getFullname() == name]
-        if contact:
-            return contact[0]
+        # Validate Client info
+        client = None
+        clientname = context.Schema()['ClientName'].get(context)
+        clientid = context.Schema()['ClientID'].get(context)
+        brains = portal_catalog(portal_type='Client', getName=clientname)
+        if brains:
+            # Client name found: validate client's ID against import file
+            client = brains[0].getObject()
+            if clientid and clientid != client.getClientID():
+                errors.append(
+                    "Client '{}' has ID '{}', but you specified '{}'".format(
+                        client.Title(), client.getClientID(), clientid))
+        else:
+            # Client name not found
+            errors.append(
+                "Client name is invalid; please select a valid client, "
+                "or enter a valid Client Name.")
+        if client:
+            if context.aq_parent != client:
+                # Wrong client name specified
+                errors.append("The client specified does not match "
+                              "the current context!")
 
-        return None
+        # Validate ContactName
+        if client:
+            contactname = context.Schema()['ContactName'].get(context)
+            if not self.is_valid_contact(contactname):
+                errors.append(
+                    "Contact name is not a valid contact for this client.")
+        else:
+            errors.append(
+                "Cannot validate Contact until valid Client is selected.")
 
-    def get_sample_type_by_name(self, name):
-        """Get the sample type object by name
-        """
-        results = self.arimport.bika_setup_catalog(
-            dict(portal_type="SampleType", title=name))
-        if results:
-            return results[0].getObject()
-        return None
+        # Validate integrity of the different batch fields if the
+        # Batch ID or Title reference an existing batch.
+        batch = None
+        batch_id = context.getBatchID()
+        batch_title = context.getBatchTitle()
+        # First try to find existing batch
+        brains = bika_catalog(portal_type='Batch', id=batch_id)
+        if not brains:
+            brains = bika_catalog(portal_type='Batch', title=batch_title)
+        if brains:
+            batch = brains[0].getObject()
+            # if both title and id are specified, make sure they both match
+            if batch_title and batch_id:
+                if batch.Title() != batch_title:
+                    errors.append("Existing Work Order title is not {}".format(
+                        batch_title
+                    ))
+                if batch.getId() != batch_id:
+                    errors.append("Existing Work Order ID is not {}".format(
+                        batch_id
+                    ))
 
-    def get_sample_point_by_name(self, name):
-        """Get the sample type object by name
-        """
-        results = self.arimport.bika_setup_catalog(
-            dict(portal_type="SamplePoint", title=name))
-        if results:
-            return results[0].getObject()
-        return None
+        # Simple SamplePoint validation
+        sp = context.Schema()['SamplePoint'].get(context)
+        if not sp:
+            errors.append("SamplePoint is not set.")
 
-    def progressbar_init(self, title):
-        """Progress Bar
-        """
-        bar = ProgressBar(self.context, self.request, title, description='')
-        notify(InitialiseProgressBar(bar))
+        # Simple SampleType validation
+        st = context.Schema()['SampleType'].get(context)
+        if not st:
+            errors.append("SampleType is not set.")
 
-    def progressbar_progress(self, n, total):
-        """Progres Bar Progress
-        """
-        progress_index = float(n) / float(total) * 100.0
-        progress = ProgressState(self.request, progress_index)
-        notify(UpdateProgressEvent(progress))
+        # Validate ItemData fields
+        for item in context.Schema()['ItemData'].get(self.context):
+            csid = item['ClientSampleID']
+            # Analytes
+            for analyte in item['Analyses']:
+                uids = self.resolve_analyses(analyte)
+                if isinstance(uids, basestring):
+                    errors.append("{}: {}".format(csid, uids))
+            # DateSampled
+            try:
+                DateTime(item['DateSampled'])
+            except:
+                errors.append("{}: Invalid date {}".format(
+                    csid, item['DateSampled']))
+
+        context.Schema()['Errors'].set(context, errors)
+        if not errors:
+            context.Schema()['Valid'].set(context, True)
+
+        valid = context.Schema()['Valid'].get(context)
+        if not valid:
+            self.statusmessage("There were errors during validation.")
+            url = self.context.absolute_url() + "/base_edit"
+            transaction.commit()
+            raise Redirect(url)
+
+    def is_valid_contact(self, fullname):
+        contacts = self.context.aq_parent.objectValues('Contact')
+        for contact in contacts:
+            if contact.getFullname() == fullname:
+                return True
+        return False
+
+    def import_items(self):
+
+        context = self.context
+        request = context.REQUEST
+        uc = getToolByName(context, 'uid_catalog')
+        bika_catalog = getToolByName(context, 'bika_catalog')
+
+        client = context.aq_parent
+        contact = [c for c in client.objectValues('Contact')
+                   if c.getFullname() == self.context.getContactName()][0]
+
+        self.progressbar_init('Submitting AR Import')
+
+        # Find existing batch or create new batch if required.
+        batch = None
+        batch_id = context.getBatchID()
+        batch_title = context.getBatchTitle()
+        # First try to find existing batch
+        brains = bika_catalog(portal_type='Batch', id=batch_id)
+        if not brains:
+            brains = bika_catalog(portal_type='Batch', title=batch_title)
+        if brains:
+            batch = brains[0]
+        if not batch:
+            # Create batch if it does not exist
+            _bid = batch_id if batch_id else tmpID()
+            batch = _createObjectByType("Batch", client, _bid)
+            batch.unmarkCreationFlag()
+            batch.edit(
+                title = batch_title,
+                description = context.getBatchDescription(),
+                ClientBatchID = context.getClientBatchID(),
+                Remarks = context.getLabBatchComment(),
+                ClientBatchComment = context.getClientBatchComment()
+            )
+            if not batch_id:
+                batch._renameAfterCreation()
+            event.notify(ObjectInitializedEvent(batch))
+            batch.at_post_create_script()
+
+        itemdata = context.Schema()['ItemData'].get(context)
+        for n, item in enumerate(itemdata):
+            service_uids = []
+            for a in item['Analyses']:
+                service_uids.extend(self.resolve_analyses(a))
+
+            # Create Sample
+            sample_values = {
+                'ClientReference': context.getClientReference(),
+                'ClientSampleID': item['ClientSampleID'],
+                'SampleType': context.getSampleType(),
+                'SamplePoint': context.getSamplePoint(),
+                'DateSampled': DateTime(item['DateSampled']),
+                'SamplingDate': DateTime(item['DateSampled']),
+                'Remarks': item['Remarks'],
+            }
+            sample = create_sample(client, request, sample_values)
+
+            # Create AR
+            ar_values = {
+                'Sample': sample,
+                'Contact': contact,
+                'ClientOrderNumber': context.getClientOrderNumber(),
+                'Remarks': item['Remarks'],
+                'Batch': batch if batch else None,
+            }
+            ar = create_analysisrequest(
+                client, request, ar_values, analyses=service_uids,
+                partitions=[{}]
+            )
+
+            # Create and link partitions with analyses.
+            part_values = {u'container': [],
+                           u'minvol': u'0 ml',
+                           'part_id': sample.getId() + "-P1",
+                           u'preservation': [],
+                           u'separate': False,
+                           u'services': service_uids}
+            part = create_samplepartition(
+                context, part_values, ar.getAnalyses(full_objects=True))
+
+            self.progressbar_progress(n + 1, len(itemdata))

@@ -8,10 +8,11 @@
     <include package="bika.lims" file="permissions.zcml" />
 
     <adapter
+        for="bika.lims.interfaces.IARImport
+             zope.publisher.interfaces.http.IHTTPRequest"
         provides="bika.lims.interfaces.IARImportHandler"
-        for="zope.interface.Interface"
         factory="bika.uw.browser.arimports.handler.ImportHandler"
-        name="ARImportHandler"
+        permission="zope2.View"
     />
 
     <browser:page
