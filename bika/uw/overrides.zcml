@@ -7,12 +7,12 @@
     <!-- Needed for bika.lims.ManageARImport permission -->
     <include package="bika.lims" file="permissions.zcml" />
 
-    <browser:page
-      for="bika.lims.interfaces.IClient"
-      name="arimport_add"
-      class="bika.uw.browser.arimports.ClientARImportAddView"
-      permission="bika.lims.ManageARImport"
-      layer="bika.lims.interfaces.IBikaLIMS"
+    <adapter
+        for="bika.lims.interfaces.IARImport
+             zope.publisher.interfaces.http.IHTTPRequest"
+        provides="bika.lims.interfaces.IARImportHandler"
+        factory="bika.uw.browser.arimports.handler.ImportHandler"
+        permission="zope2.View"
     />
 
     <browser:page

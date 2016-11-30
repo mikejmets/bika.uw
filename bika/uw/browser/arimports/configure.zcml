@@ -1,0 +1,14 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    i18n_domain="bika">
+
+  <browser:page
+      for="bika.lims.interfaces.IARImport"
+      name="getContacts"
+      class="bika.uw.browser.arimports.ajaxGetContacts"
+      permission="zope.Public"
+  />
+
+</configure>

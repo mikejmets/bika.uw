@@ -6,6 +6,7 @@
 
     <include package=".batch"/>
     <include package=".client"/>
+    <include package=".arimports"/>
 
     <browser:resourceDirectory
       name="bika.uw.js"
