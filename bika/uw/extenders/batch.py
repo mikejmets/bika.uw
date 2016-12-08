@@ -901,7 +901,6 @@ class BatchSchemaModifier(object):
         """
 
         self.hide_fields(schema, ["Client",
-                                  "BatchDate",
                                   "InheritedObjectsUI",
                                   "Remarks",
                                   "title"])
