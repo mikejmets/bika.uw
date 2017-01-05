@@ -6,37 +6,31 @@ This package contains custom code related to UW.
 Installation
 ============
 
-1. Install Plone
-
-    The Unified Installer is the recommended method.
-
-2. Edit buildout.cfg
-
-    Add 'bika.uw' to the eggs and develop sections.
-
-3. Download sources
-
-    cd Plone/zeocluster/src
-    git clone git@d1.bikalabs.com:bika/bika.uw
-
-4. Run buildout again
-
-    bin/builodut
-
-5. Activate the bika.uw addon.
-
-    When creating a new site, only "Bika LIMS UW" need be selected.  It
-    will install all packages on which it depends.
-
-    If adding bika.uw to an existing site, visit Site Setup -> Addons,
-    find the Bika LIMS UW addon in the list, and activate it.
+- run python bootstrap.py
+- run bin/buildout
+- run bin/zeoserver start
+- run bin/client1 start
+- visit localhost:8080
+- add new site
+- select bika UW addon.
 
 Changes
 =======
 
-1. 'Translated' display strings to conform to UW terminology
+These belong here:
 
-2. Expanded Batch workflow
+- Translated display strings to conform to UW terminology
+- Additional fields on some objects, and modified table and object views to
+  disply additional fields
 
-3. Additional Batch fields
+These are being PRed against bika.lims/master:
 
+- Expanded Batch workflow with field default acquisition
+- optional Single-service selector
+- CAS (and other custom identifiers) registry
+
+
+Issues
+======
+LIMS-2462: Import.  Field values not propagated, Sampling date incorrect, general feeling of inconsistency.
+LIMS-2464: State of open WO won't advance
