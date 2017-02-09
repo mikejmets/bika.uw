@@ -24,6 +24,7 @@ setup(name='bika.uw',
           # -*- Extra requirements: -*-
           'bika.lims',
           'archetypes.schemaextender',
+          'Product.DataGridField',
       ],
       extras_require={
           'test': [

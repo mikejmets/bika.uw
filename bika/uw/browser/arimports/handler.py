@@ -36,6 +36,7 @@ class ImportHandler(BaseHandler):
 
         context = self.context
         bika_catalog = getToolByName(context, 'bika_catalog')
+        bika_setup_catalog = getToolByName(context, 'bika_setup_catalog')
 
         blob = context.Schema()['RawData'].get(context)
         lines = blob.data.splitlines()
@@ -74,6 +75,21 @@ class ImportHandler(BaseHandler):
         brains = bika_catalog(portal_type='Batch', title=_batchtitle)
         batch = brains[0].getObject() if brains else None
 
+        #Loopup sameple type and point
+        sampletype = None
+        sampletypes = bika_setup_catalog(
+            portal_type='SampleType',
+            title=_sampletype)
+        if len(sampletypes) == 1:
+            sampletype = sampletypes[0].getObject()
+
+        samplepoint = None
+        samplepoints = bika_setup_catalog(
+            portal_type='SamplePoint',
+            title=_samplepoint)
+        if len(samplepoints) == 1:
+            samplepoint = samplepoints[0].getObject()
+
         # Write applicable values to ARImport schema
         # These are values that will be used in all created objects,
         # and are set only once.
@@ -84,8 +100,8 @@ class ImportHandler(BaseHandler):
             'ClientReference': _clientreference,
             'ContactName': _contactname,
             'CCContacts': [],
-            'SamplePoint': None,
-            'SampleType': None,
+            'SamplePoint': samplepoint,
+            'SampleType': sampletype,
             'ActivitySampled': _activitysampled,
             'BatchTitle': _batchtitle,
             'BatchDescription': _batchdescription,
