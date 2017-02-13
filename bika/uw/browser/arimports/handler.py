@@ -72,10 +72,10 @@ class ImportHandler(BaseHandler):
         nr_samples = len([x for x in lines[11:] if len(x.split(',')) > 1])
 
         # If batch already exists, link it now.
-        brains = bika_catalog(portal_type='Batch', title=_batchtitle)
+        brains = bc(portal_type='Batch', title=_batchtitle)
         batch = brains[0].getObject() if brains else None
 
-        #Loopup sameple type and point
+        #Lookup sample type and point
         sampletype = None
         sampletypes = bika_setup_catalog(
             portal_type='SampleType',
@@ -110,7 +110,7 @@ class ImportHandler(BaseHandler):
             'LabBatchComment': _labbatchcomment,
             'ClientBatchComment': _clientbatchcomment,
             'Batch': batch,
-            'NrSamples': nr_samples
+            'NrSamples': nr_samples,
         }
         # Write initial values to ARImport schema
         for fieldname, fieldvalue in arimport_values.items():
@@ -127,10 +127,11 @@ class ImportHandler(BaseHandler):
             values = {
                 'ClientSampleID': clientsampleid,
                 'AmountSampled': amountsampled,
-                'Metric': metric,
+                'AmountSampledMetric': metric,
                 'DateSampled': _datesampled,
                 'Analyses': _analytes,
                 'Remarks': remarks,
+                # 'Profile': self.profile,
             }
             itemdata.append(values)
             context.Schema()['ItemData'].set(context, itemdata)
@@ -146,8 +147,8 @@ class ImportHandler(BaseHandler):
         """
 
         context = self.context
-        portal_catalog = getToolByName(context, 'portal_catalog')
-        bika_catalog = getToolByName(context, 'bika_catalog')
+        pc = getToolByName(context, 'portal_catalog')
+        bc = getToolByName(context, 'bika_catalog')
 
         errors = []
 
@@ -155,7 +156,7 @@ class ImportHandler(BaseHandler):
         client = None
         clientname = context.Schema()['ClientName'].get(context)
         clientid = context.Schema()['ClientID'].get(context)
-        brains = portal_catalog(portal_type='Client', getName=clientname)
+        brains = pc(portal_type='Client', getName=clientname)
         if brains:
             # Client name found: validate client's ID against import file
             client = brains[0].getObject()
@@ -171,8 +172,8 @@ class ImportHandler(BaseHandler):
         if client:
             if context.aq_parent != client:
                 # Wrong client name specified
-                errors.append("The client specified does not match "
-                              "the current context!")
+                errors.append("Selected client '{}' should be '{}'!".format(
+                    client.Title(), context.aq_parent.Title()))
 
         # Validate ContactName
         if client:
@@ -187,12 +188,13 @@ class ImportHandler(BaseHandler):
         # Validate integrity of the different batch fields if the
         # Batch ID or Title reference an existing batch.
         batch = None
+
         batch_id = context.getBatchID()
         batch_title = context.getBatchTitle()
         # First try to find existing batch
-        brains = bika_catalog(portal_type='Batch', id=batch_id)
+        brains = bc(portal_type='Batch', id=batch_id)
         if not brains:
-            brains = bika_catalog(portal_type='Batch', title=batch_title)
+            brains = bc(portal_type='Batch', title=batch_title)
         if brains:
             batch = brains[0].getObject()
             # if both title and id are specified, make sure they both match
@@ -208,13 +210,19 @@ class ImportHandler(BaseHandler):
 
         # Simple SamplePoint validation
         sp = context.Schema()['SamplePoint'].get(context)
+        if isinstance(sp, basestring):
+            errors.append("'{}' is not a valid sample point.".format(sp))
         if not sp:
-            errors.append("SamplePoint is not set.")
+            errors.append(
+                "The selected sample point/sampling location was not found.")
 
-        # Simple SampleType validation
+        # Simple SamplePoint validation
         st = context.Schema()['SampleType'].get(context)
+        if isinstance(st, basestring):
+            errors.append("'{}' is not a valid sample point.".format(st))
         if not st:
-            errors.append("SampleType is not set.")
+            errors.append(
+                "The selected sample medium/sample type was not found.")
 
         # Validate ItemData fields
         for item in context.Schema()['ItemData'].get(self.context):
@@ -278,11 +286,11 @@ class ImportHandler(BaseHandler):
             batch = _createObjectByType("Batch", client, _bid)
             batch.unmarkCreationFlag()
             batch.edit(
-                title = batch_title,
-                description = context.getBatchDescription(),
-                ClientBatchID = context.getClientBatchID(),
-                Remarks = context.getLabBatchComment(),
-                ClientBatchComment = context.getClientBatchComment()
+                title=batch_title,
+                description=context.getBatchDescription(),
+                ClientBatchID=context.getClientBatchID(),
+                Remarks=context.getLabBatchComment(),
+                ClientBatchComment=context.getClientBatchComment()
             )
             if not batch_id:
                 batch._renameAfterCreation()

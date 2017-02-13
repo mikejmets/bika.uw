@@ -268,4 +268,35 @@ class AnalysisRequestSchemaModifier(object):
         }
         schema.moveField('SampleSite', before='SampleType')
 
-        return schema
+        # LIMS-1378
+        # These fields from bika.lims will be flagged as acquired=True,
+        # and have corrosponding fields in bika.uw/extenders/batch.py
+        acquired = [
+            'Client',
+            'Contact',
+            'CCContact',
+            'CCEmails',
+            'InvoiceContact',
+            'SampleTemperature',
+            'Template',
+            'Profile',
+            'DateSampled',
+            'Sampler',
+            'SamplingDate',
+            'SampleType',
+            'SampleMatrix',
+            'Specification',
+            'SamplePoint',
+            'StorageLocation',
+            'ClientOrderNumber',
+            'ClientReference',
+            'SamplingDeviation',
+            'SampleCondition',
+            'ReturnSampleToClient',
+            'Hazardous',
+            'DefaultContainerType',
+            'PreparationWorkflow',
+            'Priority']
+        for field in acquired:
+            if field in schema:
+                schema[field].acquire = True

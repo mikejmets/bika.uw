@@ -176,3 +176,19 @@ class SampleSchemaModifier(object):
         for field in toremove:
             schema[field].required = False
             schema[field].widget.visible = False
+
+        # LIMS-1378
+        # These fields from bika.lims will be flagged as acquired=True,
+        # and have corrosponding fields in bika.uw/extenders/batch.py
+        acquired = [
+            'ReturnSampleToClient',
+            'Hazardous',
+            'SampleTemperature',
+            'DateSampled',
+            'Sampler',
+            'PreparationWorkflow',
+            'SamplingDeviation',
+            'SampleCondition']
+        for field in acquired:
+            if field in schema:
+                schema[field].acquire = True
