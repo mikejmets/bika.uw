@@ -303,8 +303,12 @@ class ImportHandler(BaseHandler):
             for a in item['Analyses']:
                 service_uids.extend(self.resolve_analyses(a))
 
-            # Create Sample
-            sample_values = {
+            # Create AR
+            ar_values = {
+                'Contact': contact,
+                'ClientOrderNumber': context.getClientOrderNumber(),
+                'Remarks': item['Remarks'],
+                'Batch': batch if batch else None,
                 'ClientReference': context.getClientReference(),
                 'ClientSampleID': item['ClientSampleID'],
                 'SampleType': context.getSampleType(),
@@ -313,29 +317,9 @@ class ImportHandler(BaseHandler):
                 'SamplingDate': DateTime(item['DateSampled']),
                 'Remarks': item['Remarks'],
             }
-            sample = create_sample(client, request, sample_values)
-
-            # Create AR
-            ar_values = {
-                'Sample': sample,
-                'Contact': contact,
-                'ClientOrderNumber': context.getClientOrderNumber(),
-                'Remarks': item['Remarks'],
-                'Batch': batch if batch else None,
-            }
             ar = create_analysisrequest(
                 client, request, ar_values, analyses=service_uids,
                 partitions=[{}]
             )
-
-            # Create and link partitions with analyses.
-            part_values = {u'container': [],
-                           u'minvol': u'0 ml',
-                           'part_id': sample.getId() + "-P1",
-                           u'preservation': [],
-                           u'separate': False,
-                           u'services': service_uids}
-            part = create_samplepartition(
-                context, part_values, ar.getAnalyses(full_objects=True))
 
             self.progressbar_progress(n + 1, len(itemdata))
