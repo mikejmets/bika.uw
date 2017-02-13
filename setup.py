@@ -24,11 +24,12 @@ setup(name='bika.uw',
           # -*- Extra requirements: -*-
           'bika.lims',
           'archetypes.schemaextender',
-          'Product.DataGridField',
+          'Products.DataGridField',
       ],
       extras_require={
           'test': [
               'plone.app.testing',
+              'plone.resource',
           ]
       },
       entry_points="""
