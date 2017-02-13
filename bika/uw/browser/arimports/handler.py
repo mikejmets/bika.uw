@@ -72,7 +72,7 @@ class ImportHandler(BaseHandler):
         nr_samples = len([x for x in lines[11:] if len(x.split(',')) > 1])
 
         # If batch already exists, link it now.
-        brains = bc(portal_type='Batch', title=_batchtitle)
+        brains = bika_catalog(portal_type='Batch', title=_batchtitle)
         batch = brains[0].getObject() if brains else None
 
         #Lookup sample type and point
