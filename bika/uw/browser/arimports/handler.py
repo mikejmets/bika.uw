@@ -318,7 +318,6 @@ class ImportHandler(BaseHandler):
             batch.at_post_create_script()
 
         itemdata = context.Schema()['ItemData'].get(context)
-        print "import_items %s"%len(itemdata)
 
         for i, item in enumerate(itemdata):
             service_uids = []
