@@ -228,15 +228,7 @@ class ImportHandler(BaseHandler):
                         batch_id
                     ))
 
-        # Simple SamplePoint validation
-        sp = context.Schema()['SamplePoint'].get(context)
-        if isinstance(sp, basestring):
-            errors.append("'{}' is not a valid sample point.".format(sp))
-        if not sp:
-            errors.append(
-                "The selected sample point/sampling location was not found.")
-
-        # Simple SamplePoint validation
+        # Simple SampleType validation
         st = context.Schema()['SampleType'].get(context)
         if isinstance(st, basestring):
             errors.append("'{}' is not a valid sample point.".format(st))
