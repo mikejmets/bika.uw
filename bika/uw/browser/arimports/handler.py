@@ -322,7 +322,8 @@ class ImportHandler(BaseHandler):
                 'ClientSampleID': item['ClientSampleID'],
                 'SampleType': context.getSampleType(),
                 # SampleSite field: extenders/arimport,sample,analysisrequest.py
-                'SampleSite': context.getSampleSite(),
+
+                'SampleSite': context.getField('SampleSite').get(context),
                 'DateSampled': DateTime(item['DateSampled']),
                 'SamplingDate': DateTime(item['DateSampled']),
                 'Remarks': item['Remarks'],

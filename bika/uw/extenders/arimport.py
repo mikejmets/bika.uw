@@ -40,7 +40,7 @@ class ARImportSchemaExtender(object):
     def getOrder(self, schematas):
         """Return modified order of field schemats.
         """
-        index = schematas['default'].index('SamplePoint') + 1
+        index = schematas['default'].index('SampleType') + 1
         schematas['default'].insert(index, 'SampleSite')
         return schematas
 
@@ -59,6 +59,8 @@ class ARImportSchemaModifier(object):
         for field in HIDDEN_FIELDS:
             schema[field].required = False
             schema[field].widget.visible = False
+
+        schema.moveField('SampleSite', after='SampleType')
 
         return schema
 
