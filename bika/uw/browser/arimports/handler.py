@@ -1,20 +1,24 @@
 # -*- coding: utf-8 -*-
+import os
+from Products.ATContentTypes.utils import dt2DT
 
 from bika.lims.browser.arimport.handler import ImportHandler as BaseHandler
+from bika.lims.content.analysisservice import AnalysisService
 from bika.lims.interfaces import IARImportHandler
 from bika.lims.utils import tmpID
 from bika.lims.utils.analysisrequest import create_analysisrequest
-from bika.lims.utils.sample import create_sample
-from bika.lims.utils.samplepartition import create_samplepartition
-from zope.interface import implements
 
-import transaction
 from DateTime import DateTime
 from Products.Archetypes.event import ObjectInitializedEvent
 from Products.CMFCore.utils import getToolByName
 from Products.CMFPlone.utils import _createObjectByType
+from tempfile import mkstemp
 from zExceptions import Redirect
 from zope import event
+from zope.interface import implements
+
+import openpyxl
+import transaction
 
 
 class ImportHandler(BaseHandler):
@@ -35,52 +39,60 @@ class ImportHandler(BaseHandler):
         """
 
         context = self.context
-        bc = getToolByName(context, 'bika_catalog')
-        bsc = getToolByName(context, 'bika_setup_catalog')
+        bika_catalog = getToolByName(context, 'bika_catalog')
+        bika_setup_catalog = getToolByName(context, 'bika_setup_catalog')
 
         blob = context.Schema()['RawData'].get(context)
-        lines = blob.data.splitlines()
+
+        wb, fn = self.load_workbook(blob.data)
+        ws = wb.worksheets[0]
 
         # Header data
-        line = [x.strip('"').strip("'") for x in lines[1].split(',')]
-        _clientname = line[2]
-        _clientid = line[3]
-        _contactname = line[4]
-        _clientordernumber = line[5]
-        _clientreference = line[6]
+        _clientname = ws['C2'].value
+        _clientid = ws['D2'].value
+        _contactname = ws['E2'].value
+        _clientordernumber = ws['F2'].value
+        _clientreference = ws['G2'].value
         # Batch data
-        line = [x.strip('"').strip("'") for x in lines[3].split(',')]
-        _batchtitle = line[1]
-        _batchid = line[2]
-        _batchdescription = line[3]
-        _clientbatchid = line[4]
-        returnsampletoclient = line[5]
+        _batchtitle = ws['B4'].value
+        _batchid = ws['C4'].value
+        _batchdescription = ws['D4'].value
+        _clientbatchid = ws['E4'].value
+        returnsampletoclient = ws['F4'].value
         # "Batch meta" (just more batch data really)
-        line = [x.strip('"').strip("'") for x in lines[5].split(',')]
-        _clientbatchcomment = line[1]
-        _labbatchcomment = line[2]
+        _clientbatchcomment = ws['B6'].value
+        _labbatchcomment = ws['C6'].value
         # analytes (profile titles, service titles, service keywords, CAS nr)
-        line = [x.strip('"').strip("'") for x in lines[7].split(',')]
-        _analytes = [x for x in line[1:] if x]
+        _analytes = [ws[chr(x) + '8'].value
+                     for x in range(66, 91)  # B=66, Z=90
+                     if ws[chr(x) + '8'].value]
         # Samples "meta" (common values for all samples)
-        line = [x.strip('"').strip("'") for x in lines[9].split(',')]
-        _datesampled = line[1]
-        _sampletype = line[2]
-        _samplepoint = line[3]
-        _activitysampled = line[4]
+        try:
+            _datesampled = str(dt2DT(ws['B10'].value))
+        except:
+            _datesampled = ''
+        _sampletype = ws['C10'].value
+        _samplesite = ws['D10'].value
+        _activitysampled = ws['E10'].value
         # count the number of sample rows
-        nr_samples = len([x for x in lines[11:] if len(x.split(',')) > 1])
+        nr_samples = 0
+        while 1:
+            if ws['B{}'.format(12 + nr_samples)].value:
+                nr_samples += 1
+            else:
+                break
 
         # If batch already exists, link it now.
-        brains = bc(portal_type='Batch', title=_batchtitle)
+        brains = bika_catalog(portal_type='Batch', title=_batchtitle)
         batch = brains[0].getObject() if brains else None
 
-        # SampleType and SamplePoint can remain strings for validator to use
-        # in messages.
-        brains = bsc(portal_type='SamplePoint', title=_samplepoint)
-        samplepoint = brains[0].getObject() if brains else None
-        brains = bsc(portal_type='SampleType', title=_sampletype)
-        sampletype = brains[0].getObject() if brains else None
+        # Lookup sample type and point
+        sampletype = None
+        sampletypes = bika_setup_catalog(
+            portal_type='SampleType',
+            title=_sampletype)
+        if len(sampletypes) == 1:
+            sampletype = sampletypes[0].getObject()
 
         # Write applicable values to ARImport schema
         # These are values that will be used in all created objects,
@@ -92,8 +104,9 @@ class ImportHandler(BaseHandler):
             'ClientReference': _clientreference,
             'ContactName': _contactname,
             'CCContacts': [],
-            'SamplePoint': samplepoint,
             'SampleType': sampletype,
+            # SampleSite field: extenders/arimport,sample,analysisrequest.py
+            'SampleSite': _samplesite,
             'ActivitySampled': _activitysampled,
             'BatchTitle': _batchtitle,
             'BatchDescription': _batchdescription,
@@ -110,16 +123,14 @@ class ImportHandler(BaseHandler):
 
         itemdata = []
         for sample_nr in range(nr_samples):
-            line = [x.strip('"').strip("'")
-                    for x in lines[11 + sample_nr].split(',')]
-            clientsampleid = line[1]
-            amountsampled = line[2]
-            metric = line[3]
-            remarks = line[4]
+            clientsampleid = ws['B{}'.format(12 + sample_nr)].value
+            amountsampled = ws['C{}'.format(12 + sample_nr)].value
+            metric = ws['D{}'.format(12 + sample_nr)].value
+            remarks = ws['E{}'.format(12 + sample_nr)].value
             values = {
-                'ClientSampleID': clientsampleid,
-                'AmountSampled': amountsampled,
-                'AmountSampledMetric': metric,
+                'ClientSampleID': str(clientsampleid),
+                'AmountSampled': str(amountsampled),
+                'AmountSampledMetric': str(metric),
                 'DateSampled': _datesampled,
                 'Analyses': _analytes,
                 'Remarks': remarks,
@@ -128,6 +139,17 @@ class ImportHandler(BaseHandler):
             itemdata.append(values)
             context.Schema()['ItemData'].set(context, itemdata)
         context.reindexObject()
+
+        # Close worksheet and remove the tmp file.
+        wb.close()
+        os.unlink(fn)
+
+    def load_workbook(self, data):
+        fd, fn = mkstemp(suffix=".xlsx")
+        os.close(fd)
+        open(fn, 'wb').write(data)
+        wb = openpyxl.load_workbook(fn, data_only=True, guess_types=False)
+        return wb, fn
 
     def validate(self):
         """Resolve and validate stored values
@@ -200,15 +222,7 @@ class ImportHandler(BaseHandler):
                         batch_id
                     ))
 
-        # Simple SamplePoint validation
-        sp = context.Schema()['SamplePoint'].get(context)
-        if isinstance(sp, basestring):
-            errors.append("'{}' is not a valid sample point.".format(sp))
-        if not sp:
-            errors.append(
-                "The selected sample point/sampling location was not found.")
-
-        # Simple SamplePoint validation
+        # Simple SampleType validation
         st = context.Schema()['SampleType'].get(context)
         if isinstance(st, basestring):
             errors.append("'{}' is not a valid sample point.".format(st))
@@ -290,44 +304,33 @@ class ImportHandler(BaseHandler):
             batch.at_post_create_script()
 
         itemdata = context.Schema()['ItemData'].get(context)
-        for n, item in enumerate(itemdata):
+
+        for i, item in enumerate(itemdata):
             service_uids = []
             for a in item['Analyses']:
-                service_uids.extend(self.resolve_analyses(a))
-
-            # Create Sample
-            sample_values = {
-                'ClientReference': context.getClientReference(),
-                'ClientSampleID': item['ClientSampleID'],
-                'SampleType': context.getSampleType(),
-                'SamplePoint': context.getSamplePoint(),
-                'DateSampled': DateTime(item['DateSampled']),
-                'SamplingDate': DateTime(item['DateSampled']),
-                'Remarks': item['Remarks'],
-            }
-            sample = create_sample(client, request, sample_values)
+                for service in self.resolve_analyses(a):
+                    if isinstance(service, AnalysisService):
+                        service_uids.append(service.UID())
 
             # Create AR
             ar_values = {
-                'Sample': sample,
                 'Contact': contact,
                 'ClientOrderNumber': context.getClientOrderNumber(),
                 'Remarks': item['Remarks'],
                 'Batch': batch if batch else None,
+                'ClientReference': context.getClientReference(),
+                'ClientSampleID': item['ClientSampleID'],
+                'SampleType': context.getSampleType(),
+                # SampleSite field: extenders/arimport,sample,analysisrequest.py
+
+                'SampleSite': context.getField('SampleSite').get(context),
+                'DateSampled': DateTime(item['DateSampled']),
+                'SamplingDate': DateTime(item['DateSampled']),
+                'Remarks': item['Remarks'],
             }
             ar = create_analysisrequest(
                 client, request, ar_values, analyses=service_uids,
                 partitions=[{}]
             )
 
-            # Create and link partitions with analyses.
-            part_values = {u'container': [],
-                           u'minvol': u'0 ml',
-                           'part_id': sample.getId() + "-P1",
-                           u'preservation': [],
-                           u'separate': False,
-                           u'services': service_uids}
-            part = create_samplepartition(
-                context, part_values, ar.getAnalyses(full_objects=True))
-
-            self.progressbar_progress(n + 1, len(itemdata))
+            self.progressbar_progress(i + 1, len(itemdata))
