@@ -72,7 +72,7 @@ class ImportHandler(BaseHandler):
         except:
             _datesampled = ''
         _sampletype = ws['C10'].value
-        _samplepoint = ws['D10'].value
+        _samplesite = ws['D10'].value
         _activitysampled = ws['E10'].value
         # count the number of sample rows
         nr_samples = 0
@@ -94,13 +94,6 @@ class ImportHandler(BaseHandler):
         if len(sampletypes) == 1:
             sampletype = sampletypes[0].getObject()
 
-        samplepoint = None
-        samplepoints = bika_setup_catalog(
-            portal_type='SamplePoint',
-            title=_samplepoint)
-        if len(samplepoints) == 1:
-            samplepoint = samplepoints[0].getObject()
-
         # Write applicable values to ARImport schema
         # These are values that will be used in all created objects,
         # and are set only once.
@@ -111,8 +104,9 @@ class ImportHandler(BaseHandler):
             'ClientReference': _clientreference,
             'ContactName': _contactname,
             'CCContacts': [],
-            'SamplePoint': samplepoint,
             'SampleType': sampletype,
+            # SampleSite field: extenders/arimport,sample,analysisrequest.py
+            'SampleSite': _samplesite,
             'ActivitySampled': _activitysampled,
             'BatchTitle': _batchtitle,
             'BatchDescription': _batchdescription,
@@ -327,7 +321,8 @@ class ImportHandler(BaseHandler):
                 'ClientReference': context.getClientReference(),
                 'ClientSampleID': item['ClientSampleID'],
                 'SampleType': context.getSampleType(),
-                'SamplePoint': context.getSamplePoint(),
+                # SampleSite field: extenders/arimport,sample,analysisrequest.py
+                'SampleSite': context.getSampleSite(),
                 'DateSampled': DateTime(item['DateSampled']),
                 'SamplingDate': DateTime(item['DateSampled']),
                 'Remarks': item['Remarks'],

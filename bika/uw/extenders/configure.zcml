@@ -14,4 +14,7 @@
     <adapter factory=".sample.SampleSchemaModifier" />
     <adapter factory=".samplepartition.SamplePartitionSchemaModifier" />
 
+    <adapter factory=".arimport.ARImportSchemaExtender" />
+    <adapter factory=".arimport.ARImportSchemaModifier" />
+
 </configure>
