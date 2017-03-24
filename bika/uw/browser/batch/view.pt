@@ -24,6 +24,12 @@
     </style>
 </head>
 <body>
+<h1 class="documentActions">
+    <a class="context_action_link" 
+        tal:attributes="href python:'%s/batch_export' % here.absolute_url()">
+        <img src="++resource++bika.uw.images/csv_text.png" alt="Download CSV" title="Download CSV"/>
+    </a>
+</h1>
 
 <div class="table summary"
      tal:define="rows python:view.summary_rows(show_empty=False)">

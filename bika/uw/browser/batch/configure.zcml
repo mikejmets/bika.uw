@@ -12,4 +12,13 @@
             layer="bika.lims.interfaces.IBikaLIMS"
     />
 
+    <browser:page
+            for="bika.lims.interfaces.IBatch"
+            name="batch_export"
+            class="bika.uw.browser.batch.view.ViewView"
+            attribute="batch_export"
+            permission="zope2.View"
+            layer="bika.lims.interfaces.IBikaLIMS"
+    />
+
 </configure>

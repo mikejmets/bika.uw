@@ -1,5 +1,6 @@
 # coding=utf-8
-
+import csv
+from cStringIO import StringIO
 from Products.CMFCore.utils import getToolByName
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from openpyxl import load_workbook
@@ -221,7 +222,7 @@ class ViewView(BrowserView):
 
         return rows
 
-    def sample_pairs(self, sample):
+    def sample_pairs(self, sample, html=True):
         """Return the list of pairs for a single Sample.
         This output decides the ordering of fields and the html that's used
         to display them.  html is rendered structurally in values.
@@ -235,22 +236,37 @@ class ViewView(BrowserView):
         samplematrix = schema['SampleMatrix'].get(self.context)
         sampledwithmetric = schema['AmountSampled'].get(sample) + ' ' + \
                             schema['AmountSampledMetric'].get(sample)
-        rows = [
-            (_('Sample ID'),
-             a(sample.absolute_url(), sample.Title()) if sample else ''),
-            (_('Client ID'), a(sample.absolute_url(),
-                               sample.getClientSampleID()) if sample else ''),
-            (_('Analysis Requests'), ", ".join(
-                [a(ar.absolute_url(), ar.Title()) for ar in
-                 sample.getAnalysisRequests()])),
-            (_('Sample Condition'), scond),
-            (_('Sample Type'), sampletype.Title() if sampletype else ''),
-            (_('Sample Matrix'), samplematrix.Title() if samplematrix else ''),
-            (_('Amount Sampled'), sampledwithmetric),
-        ]
+        if html:
+            rows = [
+                (_('Sample ID'),
+                 a(sample.absolute_url(), sample.Title()) if sample else ''),
+                (_('Client ID'), 
+                    a(sample.absolute_url(),
+                      sample.getClientSampleID()) if sample else ''),
+                (_('Analysis Requests'), ", ".join(
+                    [a(ar.absolute_url(), ar.Title()) for ar in
+                     sample.getAnalysisRequests()])),
+                (_('Sample Condition'), scond),
+                (_('Sample Type'), sampletype.Title() if sampletype else ''),
+                (_('Sample Matrix'), 
+                        samplematrix.Title() if samplematrix else ''),
+                (_('Amount Sampled'), sampledwithmetric),
+            ]
+        else:
+            rows = [
+                (_('Sample ID'), sample.Title() if sample else ''),
+                (_('Client ID'), sample.getClientSampleID() if sample else ''),
+                (_('Analysis Requests'), ", ".join(
+                    [ar.Title() for ar in sample.getAnalysisRequests()])),
+                (_('Sample Condition'), scond),
+                (_('Sample Type'), sampletype.Title() if sampletype else ''),
+                (_('Sample Matrix'), 
+                        samplematrix.Title() if samplematrix else ''),
+                (_('Amount Sampled'), sampledwithmetric),
+            ]
         return rows
 
-    def sample_rows(self):
+    def sample_rows(self, html=True):
         """Return one list of key,value pairs for all samples referenced by
         this batch.
         """
@@ -259,7 +275,7 @@ class ViewView(BrowserView):
         #  getAnalysisRequests uses backreferences on AnalysisRequestBatch:
         # so ARs are actual objects, but there could be other criteria.
         ars = context.getAnalysisRequests()
-        pairs = [self.sample_pairs(sample) for sample in
+        pairs = [self.sample_pairs(sample, html) for sample in
                  # May be duplicate Samples (multiple ARs):
                  sorted(list(set([ar.getSample() for ar in ars])),
                         cmp=lambda x, y: cmp(x.Title(), y.Title()))
@@ -295,4 +311,33 @@ class ViewView(BrowserView):
                     analyses[title] = analysis
         analyses = [self.analysis_pairs(analysis) for analysis in analyses.values()]
         return sorted(analyses, cmp=lambda x, y: cmp(x[0], y[0]))
+
+    def batch_export(self):
+        out = StringIO()
+        cw = csv.writer(out)
+        for row in self.summary_rows():
+            cw.writerow(row)
+        for row in self.detail_rows():
+            cw.writerow(row)
+        rows = self.sample_rows(html=False)
+        if rows:
+            cw.writerow([r[0] for r in rows[0]])
+            for row in rows:
+                cw.writerow([r[1] for r in row])
+        rows = self.analysis_rows()
+        if rows:
+            cw.writerow([r[0] for r in rows[0]])
+            for row in rows:
+                cw.writerow([r[1] for r in row])
+
+        result = out.getvalue()
+        out.close()
+
+        #stream file to browser
+        setheader = self.request.response.setHeader
+        setheader('Content-Length', len(result))
+        setheader('Content-Type', 'text/comma-separated-values')
+        filename = '%s.csv' % self.context.title
+        setheader('Content-Disposition', 'inline; filename=%s' % filename)
+        self.request.response.write(result)
 
