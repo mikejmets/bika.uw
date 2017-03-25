@@ -27,7 +27,7 @@
 <h1 class="documentActions">
     <a class="context_action_link" 
         tal:attributes="href python:'%s/batch_export' % here.absolute_url()">
-        <img src="++resource++bika.uw.images/csv_text.png" alt="Download CSV" title="Download CSV"/>
+        <img src="++resource++bika.uw.images/csv_icon.png" alt="Download CSV" title="Download CSV"/>
     </a>
 </h1>
 
