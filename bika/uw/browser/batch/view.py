@@ -230,9 +230,9 @@ class ViewView(BrowserView):
         #
         sampletype = schema['SampleType'].get(sample)
         samplematrix = schema['SampleMatrix'].get(sample)
-        scond = schema['SampleCondition'].get(self.context)
+        scond = schema['SampleCondition'].get(sample)
         samplingdate = self.ulocalized_time(schema['SamplingDate'].get(sample))
-        samplematrix = schema['SampleMatrix'].get(self.context)
+        samplematrix = schema['SampleMatrix'].get(sample)
         sampledwithmetric = schema['AmountSampled'].get(sample) + ' ' + \
                             schema['AmountSampledMetric'].get(sample)
         rows = [
@@ -243,7 +243,7 @@ class ViewView(BrowserView):
             (_('Analysis Requests'), ", ".join(
                 [a(ar.absolute_url(), ar.Title()) for ar in
                  sample.getAnalysisRequests()])),
-            (_('Sample Condition'), scond),
+            (_('Sample Condition'), scond.Title() if scond else ''),
             (_('Sample Type'), sampletype.Title() if sampletype else ''),
             (_('Sample Matrix'), samplematrix.Title() if samplematrix else ''),
             (_('Amount Sampled'), sampledwithmetric),
